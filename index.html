@@ -82,16 +82,11 @@
 <script>
     // --- 1. Firebase 配置 ---
     const firebaseConfig = {
-  apiKey: "AIzaSyBHJtwI42b8i6z7zRw6tDgtR4ITSNKWrf8",
-  authDomain: "aiot-d53dc.firebaseapp.com",
-  databaseURL: "https://aiot-d53dc-default-rtdb.firebaseio.com",
-  projectId: "aiot-d53dc",
-  storageBucket: "aiot-d53dc.firebasestorage.app",
-  messagingSenderId: "1021331253049",
-  appId: "1:1021331253049:web:11f0695e8ab64eae0baae8",
-  measurementId: "G-9YDKS70ZE7"
-};
-
+        apiKey: "YOUR_API_KEY",
+        databaseURL: "https://aiot-d53dc-default-rtdb.firebaseio.com",
+        projectId: "aiot-d53dc",
+        appId: "..."
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -112,7 +107,7 @@
     let names = ["JULIA", "MOLLY", "DON", "豪哥", "Gimme", "Erick", "韋志", "JULI", "JASON", "KRIS"];
     const colors = ["#FF5252", "#FFD700", "#E040FB", "#00E676", "#2979FF", "#FF9100", "#40C4FF", "#FF1744", "#F4FF81", "#B2FF59"];
 
-    let myName = ""; // 已移除 localStorage 記憶
+    let myName = localStorage.getItem('my_race_name') || "";
     const urlParams = new URLSearchParams(window.location.search);
     const isAdmin = urlParams.get('admin') === '1';
     let raceStarted = false;
@@ -161,14 +156,7 @@
             const users = snap.val() || {};
             names.forEach(n => {
                 const btn = document.getElementById(`name-${n}`);
-                if (users[n]) { 
-                    btn.classList.add('taken'); 
-                    if (n === myName) { 
-                        btn.classList.add('me'); 
-                        document.getElementById('user-login').style.display = 'none'; 
-                        document.getElementById('setup').style.display = 'block'; 
-                    } 
-                }
+                if (users[n]) { btn.classList.add('taken'); if (n === myName) { btn.classList.add('me'); document.getElementById('user-login').style.display = 'none'; document.getElementById('setup').style.display = 'block'; } }
                 else { btn.classList.remove('taken', 'me'); }
             });
         });
@@ -187,15 +175,11 @@
         });
     }
 
-    function login(n) { 
-        myName = n; 
-        // 移除 localStorage.setItem('my_race_name', n);
-        db.ref(`users/${n}`).set(true); 
-    }
+    function login(n) { myName = n; localStorage.setItem('my_race_name', n); db.ref(`users/${n}`).set(true); }
     function selectHorse(idx) { if (myName) db.ref(`assignments/${myName}`).set(idx); }
-    function resetData() { if (confirm("確定重置數據？")) { db.ref().set(null); location.reload(); } }
+    function resetData() { if (confirm("確定重置數據？")) { db.ref().set(null); localStorage.clear(); location.reload(); } }
 
-    // --- 4. 賽馬引擎 ---
+    // --- 4. 賽馬引擎 (同前) ---
     document.getElementById('start-btn').onclick = function() {
         db.ref('assignments').once('value', snap => {
             const participants = snap.val() || {};
@@ -255,6 +239,7 @@
         const el = document.getElementById(`status-${id}`); if (el) { el.innerText = text; el.style.display = display ? 'block' : 'none'; el.style.background = color; }
     }
 
+    // --- 5. 獎金排行榜顯示 ---
     function showLeaderboard() {
         document.getElementById('leaderboard').style.display = 'block';
         const list = document.getElementById('leaderboard-list');
@@ -263,9 +248,14 @@
             const rank = i + 1;
             const div = document.createElement('div');
             div.className = `rank-row ${rank <= 3 ? 'rank-top' : ''}`;
+            
             let medal = rank === 1 ? "🥇" : (rank === 2 ? "🥈" : (rank === 3 ? "🥉" : `#${rank}`));
             let prize = getPrize(rank);
-            div.innerHTML = `<span>${medal} ${h.ownerName}</span><span class="prize-text">${prize}</span>`;
+            
+            div.innerHTML = `
+                <span>${medal} ${h.ownerName}</span>
+                <span class="prize-text">${prize}</span>
+            `;
             list.appendChild(div);
         });
     }
