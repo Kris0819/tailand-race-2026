@@ -1,272 +1,445 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 尾牙賽馬同步系統 (PO版)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2026 AIOT 尾牙賽馬 - Pro版</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        .horse-track { height: 60px; border-bottom: 2px solid #f1f5f9; position: relative; background: #fff; }
-        .horse-emoji { font-size: 36px; position: absolute; transition: left 0.3s linear; bottom: 4px; z-index: 10; }
-        .name-tag { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); font-size: 10px; background: #4f46e5; color: white; padding: 1px 4px; border-radius: 4px; white-space: nowrap; }
-        .event-popup { position: absolute; top: -25px; color: #ef4444; font-weight: bold; font-size: 12px; white-space: nowrap; }
-        .finish-line { position: absolute; right: 40px; top: 0; bottom: 0; border-left: 4px dashed #cbd5e1; }
+        :root {
+            --primary: #ff3e3e;
+            --gold: #ffcf4b;
+            --glass: rgba(255, 255, 255, 0.1);
+            --bg: #0f0f13;
+            --card-bg: #1a1a24;
+        }
+
+        body {
+            font-family: 'PingFang TC', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: white;
+            margin: 0;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 背景流光特效 */
+        body::before {
+            content: "";
+            position: fixed;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(211,47,47,0.05) 0%, transparent 70%);
+            z-index: -1;
+        }
+
+        /* 標題與導航 */
+        header {
+            padding: 20px 10px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            background: linear-gradient(to bottom, var(--gold), #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* 選人與選馬卡片優化 */
+        .container {
+            width: 92%;
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .name-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .btn-choice {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #ccc;
+            padding: 18px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-choice:active { transform: scale(0.95); }
+        .btn-choice.taken { opacity: 0.3; filter: grayscale(1); pointer-events: none; border-style: dashed; }
+        .btn-choice.me { 
+            background: linear-gradient(135deg, #4caf50, #2e7d32); 
+            color: white; 
+            border-color: #81c784;
+            box-shadow: 0 0 20px rgba(76,175,80,0.4);
+        }
+
+        /* 選馬區優化 */
+        .horse-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        .horse-card {
+            background: #252530;
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            border: 2px solid transparent;
+            transition: 0.3s;
+        }
+        .horse-card.selected { border-color: var(--gold); background: #2a2a3a; }
+        .horse-card.occupied { opacity: 0.4; pointer-events: none; }
+        
+        .horse-avatar { font-size: 40px; margin-right: 15px; }
+        .horse-info { flex: 1; }
+        .horse-info h4 { margin: 0; color: var(--gold); font-size: 18px; }
+        .horse-info p { margin: 4px 0 0; font-size: 12px; color: #aaa; }
+        
+        .skill-tag {
+            font-size: 10px;
+            background: rgba(255,255,255,0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: #eee;
+        }
+
+        /* 賽道 - Mobile Ready */
+        .track-container {
+            width: 100vw;
+            flex-grow: 1;
+            background: #111;
+            display: none;
+            position: relative;
+            overflow: hidden;
+            border-top: 2px solid #333;
+        }
+        .lane {
+            height: 60px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            background: repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.02) 40px, rgba(255,255,255,0.02) 41px);
+        }
+        .horse-runner {
+            position: absolute;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            transition: left 0.1s linear;
+            z-index: 10;
+        }
+        .runner-icon { font-size: 30px; transform: scaleX(-1); }
+        .runner-name { font-size: 10px; position: absolute; bottom: -5px; width: 100%; text-align: center; }
+
+        /* 倒數計時 */
+        #countdown {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            font-weight: 900;
+            color: var(--gold);
+            z-index: 2000;
+            display: none;
+            text-shadow: 0 0 30px rgba(255,215,0,0.5);
+        }
+
+        /* 管理員介面 */
+        #admin-bar {
+            position: fixed;
+            bottom: 0; width: 100%;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            display: none;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .btn-start {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 0 20px var(--primary);
+        }
+
+        /* 結算畫面 */
+        #result-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 3000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
     </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body>
 
-    <div id="app" class="max-w-xl mx-auto p-4 min-h-screen">
-        <header class="text-center py-4">
-            <h1 class="text-3xl font-black text-indigo-700">🐎 RACING 2026</h1>
-        </header>
+<header>
+    <div class="logo">2026 AIOT Racing</div>
+</header>
 
-        <section id="step-user" class="bg-white p-6 rounded-3xl shadow-xl border-2 border-indigo-100">
-            <h2 class="text-lg font-bold mb-4">👤 請點選你的名字</h2>
-            <div id="user-list" class="grid grid-cols-2 gap-2"></div>
-        </section>
+<div id="countdown">3</div>
 
-        <section id="step-horse" class="bg-white p-6 rounded-3xl shadow-xl border-2 border-indigo-100 hidden">
-            <h2 class="text-lg font-bold mb-4">🐎 挑選戰馬</h2>
-            <div id="horse-selection" class="space-y-2"></div>
-        </section>
-
-        <section id="step-race" class="hidden">
-            <div id="race-status" class="text-center font-bold text-indigo-600 mb-2 bg-white p-2 rounded-xl shadow">等待開賽...</div>
-            <div id="track-container" class="bg-white rounded-2xl shadow-xl overflow-hidden relative">
-                <div class="finish-line"></div>
-                </div>
-        </section>
-
-        <div id="step-result" class="mt-4 hidden">
-            <div class="bg-yellow-400 p-4 rounded-2xl shadow-xl">
-                <h2 class="text-xl font-bold text-center mb-2">🏆 最終名次</h2>
-                <div id="rank-list" class="space-y-1"></div>
-            </div>
-        </div>
-
-        <section id="admin-panel" class="hidden mt-8 p-4 bg-slate-900 text-white rounded-2xl shadow-2xl">
-            <h2 class="text-lg font-bold mb-2 text-indigo-400">管理者控制台</h2>
-            <div id="admin-info" class="text-xs mb-4 text-gray-400"></div>
-            <div class="flex gap-2">
-                <button onclick="calculateAndStart()" class="bg-green-600 px-4 py-2 rounded-lg font-bold flex-1">生成路徑並開賽</button>
-                <button onclick="resetGame()" class="bg-red-600 px-4 py-2 rounded-lg font-bold flex-1">重置</button>
-            </div>
-        </section>
+<div id="login-screen" class="container">
+    <div class="card">
+        <h3 style="text-align: center; margin-top: 0;">選擇你的參賽身份</h3>
+        <div class="name-grid" id="name-grid"></div>
     </div>
+</div>
 
-    <audio id="bgm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"></audio>
+<div id="select-screen" class="container" style="display: none;">
+    <div class="card">
+        <h3 style="text-align: center; margin-top: 0;">挑選你的戰馬</h3>
+        <div class="horse-grid" id="horse-grid"></div>
+    </div>
+</div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBHJtwI42b8i6z7zRw6tDgtR4ITSNKWrf8",
-            authDomain: "aiot-d53dc.firebaseapp.com",
-            databaseURL: "https://aiot-d53dc-default-rtdb.firebaseio.com",
-            projectId: "aiot-d53dc",
-            storageBucket: "aiot-d53dc.firebasestorage.app",
-            messagingSenderId: "1021331253049",
-            appId: "1:1021331253049:web:11f0695e8ab64eae0baae8",
-            measurementId: "G-9YDKS70ZE7"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+<div id="track" class="track-container">
+    <div id="lanes"></div>
+    <div style="position: absolute; right: 60px; top:0; bottom:0; width:10px; background: repeating-linear-gradient(0deg, #fff, #fff 10px, #000 10px, #000 20px); opacity: 0.5;"></div>
+</div>
 
-        const players = ["Julia", "Molly", "Juli", "豪哥", "Don", "Gimme", "偉志", "Erick", "Jason", "KRIS"];
-        const horses = ["🐎", "⚡", "🦄", "🦓", "🦙", "🥳", "🎠", "🎖️", "🤖", "🏁"];
-        const prizes = ["$2500", "新光1000", "500卷", "400卷", "300卷", "200卷", "100卷", "參加獎", "參加獎", "參加獎"];
+<div id="admin-bar">
+    <button class="btn-start" onclick="triggerStart()">🏁 準備開賽！</button>
+</div>
 
-        let myName = "";
-        let raceInterval;
+<div id="result-overlay">
+    <h1 style="color:var(--gold)">🏆 比賽結果 🏆</h1>
+    <div id="rank-list" style="width: 100%; max-width: 400px;"></div>
+    <button class="btn-choice" style="margin-top: 20px; width: 200px;" onclick="location.reload()">回首頁</button>
+</div>
 
-        function init() {
-            if(window.location.hash === '#admin') document.getElementById('admin-panel').classList.remove('hidden');
+<audio id="bgm-lobby" loop src="https://actions.google.com/config/promo/sdk/v1/sample_audio/gameloop.m4a"></audio>
+<audio id="bgm-race" loop src="https://www.soundjay.com/free-music/sounds/action-rhythms-01.mp3"></audio>
+<audio id="snd-click" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+<audio id="snd-countdown" src="https://www.soundjay.com/clocks/sounds/tick-tock-3.mp3"></audio>
+<audio id="snd-win" src="https://www.soundjay.com/human/sounds/applause-01.mp3"></audio>
 
-            db.ref('gameState').on('value', snapshot => {
-                const state = snapshot.val() || {};
-                renderUserList(state.selections || {});
-                renderHorseSelection(state.selections || {});
-                
-                if (state.status === 'racing') {
-                    startSyncRace(state);
-                } else if (state.status === 'waiting') {
-                    stopRace();
-                    resetUI();
-                }
+<script>
+    // --- Data & Firebase ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyBHJtwI42b8i6z7zRw6tDgtR4ITSNKWrf8",
+      authDomain: "aiot-d53dc.firebaseapp.com",
+      databaseURL: "https://aiot-d53dc-default-rtdb.firebaseio.com",
+      projectId: "aiot-d53dc",
+      storageBucket: "aiot-d53dc.firebasestorage.app",
+      messagingSenderId: "1021331253049",
+      appId: "1:1021331253049:web:11f0695e8ab64eae0baae8",
+      measurementId: "G-9YDKS70ZE7"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-                // 管理者顯示尚未選的人
-                if(window.location.hash === '#admin') {
-                    const selected = Object.keys(state.selections || {});
-                    const unselected = players.filter(p => !selected.includes(p));
-                    document.getElementById('admin-info').innerText = "未選擇: " + unselected.join(', ');
-                }
+    const horseLibrary = [
+        { id: 0, trait: "薪水小偷", emoji: "🦥", skill: "省電模式：後半段體力消耗減半", stats: {spd: 60, sta: 95} },
+        { id: 1, trait: "下班戰神", emoji: "🐆", skill: "急著回家：終點前 20% 速度翻倍", stats: {spd: 55, sta: 65} },
+        { id: 2, trait: "爆肝工程師", emoji: "🔥", skill: "極限超頻：起步極快但易過熱", stats: {spd: 95, sta: 30} },
+        { id: 3, trait: "會議發言人", emoji: "🦜", skill: "大話精：隨機干擾他人速度", stats: {spd: 70, sta: 60} },
+        { id: 4, trait: "咖啡萃取員", emoji: "☕", skill: "咖啡因回補：體力耗盡時瞬間恢復 30%", stats: {spd: 75, sta: 45} },
+        { id: 5, trait: "甩鍋高手", emoji: "🧤", skill: "摩擦力 0：完美避開所有滑倒事件", stats: {spd: 50, sta: 80} }
+    ];
+
+    const names = ["JULIA", "MOLLY", "DON", "豪哥", "Gimme", "Erick", "韋志", "JULI", "JASON", "KRIS"];
+    let myName = "";
+    const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
+
+    // --- Logic ---
+    function init() {
+        const nameGrid = document.getElementById('name-grid');
+        names.forEach(n => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-choice';
+            btn.id = `name-${n}`;
+            btn.innerText = n;
+            btn.onclick = () => login(n);
+            nameGrid.appendChild(btn);
+        });
+
+        const horseGrid = document.getElementById('horse-grid');
+        horseLibrary.forEach((h, i) => {
+            const card = document.createElement('div');
+            card.className = 'horse-card';
+            card.id = `hcard-${i}`;
+            card.innerHTML = `
+                <div class="horse-avatar">${h.emoji}</div>
+                <div class="horse-info">
+                    <h4>${h.trait} <span class="skill-tag">${h.skill}</span></h4>
+                    <p>速度: ${h.stats.spd} | 耐力: ${h.stats.sta}</p>
+                </div>
+            `;
+            card.onclick = () => selectHorse(i);
+            horseGrid.appendChild(card);
+        });
+
+        if (isAdmin) document.getElementById('admin-bar').style.display = 'flex';
+        sync();
+    }
+
+    function playSnd(id) { document.getElementById(id).currentTime = 0; document.getElementById(id).play().catch(()=>{}); }
+
+    function login(n) {
+        myName = n;
+        db.ref(`users/${n}`).set(true);
+        playSnd('snd-click');
+        document.getElementById('bgm-lobby').play().catch(()=>{});
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('select-screen').style.display = 'block';
+    }
+
+    function selectHorse(idx) {
+        if (!myName) return;
+        db.ref(`assignments/${myName}`).set(idx);
+        playSnd('snd-click');
+    }
+
+    function sync() {
+        db.ref('users').on('value', snap => {
+            const users = snap.val() || {};
+            names.forEach(n => {
+                const btn = document.getElementById(`name-${n}`);
+                if (users[n]) btn.classList.add('taken');
+                if (n === myName) btn.classList.add('me');
             });
-        }
+        });
 
-        // --- 核心同步邏輯 ---
-        function startSyncRace(state) {
-            document.getElementById('step-user').classList.add('hidden');
-            document.getElementById('step-horse').classList.add('hidden');
-            document.getElementById('step-race').classList.remove('hidden');
-            document.getElementById('bgm').play();
+        db.ref('assignments').on('value', snap => {
+            const assigns = snap.val() || {};
+            document.querySelectorAll('.horse-card').forEach(c => c.classList.remove('occupied', 'selected'));
+            Object.entries(assigns).forEach(([name, hIdx]) => {
+                const card = document.getElementById(`hcard-${hIdx}`);
+                if (name === myName) card.classList.add('selected');
+                else card.classList.add('occupied');
+            });
+        });
 
-            const trackContainer = document.getElementById('track-container');
-            if (trackContainer.children.length <= 1) { // 僅初始化一次賽道
-                Object.entries(state.selections).forEach(([name, data]) => {
-                    const div = document.createElement('div');
-                    div.className = "horse-track";
-                    div.innerHTML = `
-                        <div id="horse-${data.horseId}" class="horse-emoji" style="left:0%">
-                            <span class="name-tag">${name}</span>${horses[data.horseId]}
-                            <div class="event-msg" id="event-${data.horseId}"></div>
-                        </div>`;
-                    trackContainer.appendChild(div);
-                });
+        db.ref('gameState').on('value', snap => {
+            const state = snap.val();
+            if (state && state.status === 'racing') {
+                runRaceSequence(state.seed, state.participants);
             }
+        });
+    }
 
-            // 同步播放器：根據伺服器時間決定目前應該在哪個影格
-            clearInterval(raceInterval);
-            raceInterval = setInterval(() => {
-                const now = Date.now();
-                const elapsed = Math.floor((now - state.startTime) / 200); // 每0.2秒一個影格
+    function triggerStart() {
+        db.ref('assignments').once('value', snap => {
+            const parts = snap.val();
+            if (!parts) return alert("還沒人選馬！");
+            db.ref('gameState').set({ status: 'racing', seed: Math.random(), participants: parts });
+        });
+    }
+
+    async function runRaceSequence(seed, participants) {
+        document.getElementById('select-screen').style.display = 'none';
+        document.getElementById('track').style.display = 'block';
+        document.getElementById('bgm-lobby').pause();
+        
+        // 渲染賽道
+        const lanes = document.getElementById('lanes');
+        lanes.innerHTML = "";
+        const racers = Object.entries(participants).map(([name, hIdx]) => ({
+            name, ...horseLibrary[hIdx], pos: 10, speed: 0, finished: false
+        }));
+
+        racers.forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'lane';
+            div.innerHTML = `<div class="horse-runner" id="runner-${r.id}" style="left:10px">
+                <div class="runner-icon">${r.emoji}</div>
+                <div class="runner-name">${r.name}</div>
+            </div>`;
+            lanes.appendChild(div);
+        });
+
+        // 倒數
+        const cd = document.getElementById('countdown');
+        cd.style.display = 'block';
+        for(let i=3; i>=1; i--) {
+            cd.innerText = i;
+            playSnd('snd-countdown');
+            await new Promise(r => setTimeout(r, 1000));
+        }
+        cd.innerText = "GO!";
+        setTimeout(() => cd.style.display = 'none', 500);
+        playSnd('bgm-race');
+
+        // 引擎
+        const finishLine = window.innerWidth - 80;
+        let winners = [];
+        const timer = setInterval(() => {
+            racers.forEach(r => {
+                if (r.finished) return;
                 
-                if (elapsed < 0) return; // 比賽還沒開始（倒數計時）
+                // 簡易物理引擎 (可加入 Skill 邏輯)
+                let accel = Math.random() * 0.5 + (r.stats.spd / 100);
+                if (r.id === 2 && Math.random() < 0.1) accel += 2; // 爆肝爆發
+                
+                r.speed = (r.speed * 0.95) + accel;
+                r.pos += r.speed;
 
-                let finishedCount = 0;
-                Object.entries(state.pathData).forEach(([hId, path]) => {
-                    const horseEl = document.getElementById(`horse-${hId}`);
-                    const eventEl = document.getElementById(`event-${hId}`);
-                    const frame = path[elapsed] || path[path.length - 1]; // 若超過時間，停在最後一格
-                    
-                    if (horseEl) horseEl.style.left = frame.pos + "%";
-                    if (eventEl && frame.event) eventEl.innerText = frame.event;
-                    else if (eventEl) eventEl.innerText = "";
+                const el = document.getElementById(`runner-${r.id}`);
+                el.style.left = r.pos + 'px';
 
-                    if (elapsed >= path.length) finishedCount++;
-                });
-
-                if (finishedCount === Object.keys(state.pathData).length) {
-                    clearInterval(raceInterval);
-                    showFinalRank(state.rankings);
+                if (r.pos >= finishLine) {
+                    r.finished = true;
+                    winners.push(r);
+                    if (winners.length === racers.length) {
+                        clearInterval(timer);
+                        showResults(winners);
+                    }
                 }
-            }, 100);
-        }
-
-        // --- 管理者：預先計算路徑 ---
-        function calculateAndStart() {
-            db.ref('gameState/selections').once('value', snapshot => {
-                const selections = snapshot.val();
-                if (!selections) return alert("還沒人選馬！");
-
-                const pathData = {};
-                const rankings = [];
-                const horseIds = Object.values(selections).map(s => s.horseId);
-
-                horseIds.forEach(id => {
-                    let pos = 0;
-                    const path = [];
-                    for (let i = 0; i < 200; i++) { // 最長跑 200 個影格
-                        let move = Math.random() * 2 + 0.5;
-                        let event = "";
-                        
-                        const roll = Math.random();
-                        if (roll < 0.03) { move = -3; event = "🍌 滑倒"; }
-                        else if (roll > 0.97) { move = 8; event = "🔥 爆發"; }
-                        else if (roll > 0.5 && roll < 0.51) { move = -pos; event = "💻 Bug!"; }
-
-                        pos = Math.min(88, Math.max(0, pos + move));
-                        path.push({ pos, event });
-                        if (pos >= 88 && !rankings.includes(id)) {
-                            // 記錄抵達影格
-                        }
-                    }
-                    pathData[id] = path;
-                });
-
-                // 根據路徑中誰先達到 88% 計算名次
-                const finishTimes = horseIds.map(id => ({
-                    id,
-                    time: pathData[id].findIndex(f => f.pos >= 88)
-                })).sort((a, b) => a.time - b.time);
-
-                const finalRankings = finishTimes.map(f => {
-                    const name = Object.keys(selections).find(k => selections[k].horseId === f.id);
-                    return { name, horseId: f.id };
-                });
-
-                db.ref('gameState').update({
-                    status: 'racing',
-                    startTime: Date.now() + 3000, // 3秒後正式開始
-                    pathData: pathData,
-                    rankings: finalRankings
-                });
             });
-        }
+        }, 50);
+    }
 
-        // --- UI 渲染 ---
-        function renderUserList(selections) {
-            const list = document.getElementById('user-list');
-            if (list.children.length > 0) {
-                // 更新狀態就好，不重繪以免跑掉
-                players.forEach((p, i) => {
-                    const btn = list.children[i];
-                    if (selections[p]) {
-                        btn.classList.add('bg-gray-200', 'text-gray-400', 'pointer-events-none');
-                        btn.innerText = p + " (已登入)";
-                    }
-                });
-                return;
-            }
-            players.forEach(p => {
-                const btn = document.createElement('button');
-                btn.className = "p-3 bg-white border-2 border-indigo-500 text-indigo-700 rounded-xl font-bold transition active:scale-95";
-                btn.innerText = p;
-                btn.onclick = () => {
-                    myName = p;
-                    document.getElementById('step-user').classList.add('hidden');
-                    document.getElementById('step-horse').classList.remove('hidden');
-                };
-                list.appendChild(btn);
-            });
-        }
+    function showResults(winners) {
+        const overlay = document.getElementById('result-overlay');
+        const list = document.getElementById('rank-list');
+        overlay.style.display = 'flex';
+        playSnd('snd-win');
+        confetti({ pixelApectRatio: 2, particleCount: 150, spread: 70, origin: { y: 0.6 } });
 
-        function renderHorseSelection(selections) {
-            const container = document.getElementById('horse-selection');
-            container.innerHTML = "";
-            const pickedIds = Object.values(selections).map(s => s.horseId);
-            horses.forEach((emoji, id) => {
-                const owner = Object.keys(selections).find(k => selections[k].horseId === id);
-                const isTaken = !!owner;
-                const div = document.createElement('div');
-                div.className = `p-3 border-2 rounded-xl flex justify-between items-center ${isTaken ? 'bg-gray-100 border-gray-200' : 'border-indigo-400'}`;
-                div.innerHTML = `<span>${emoji} 馬匹 ${id+1}</span> <span class="font-bold">${isTaken ? owner : '點擊選擇'}</span>`;
-                if(!isTaken) div.onclick = () => {
-                    db.ref(`gameState/selections/${myName}`).set({ horseId: id });
-                    document.getElementById('step-horse').classList.add('hidden');
-                    document.getElementById('step-race').classList.remove('hidden');
-                };
-                container.appendChild(div);
-            });
-        }
+        winners.forEach((w, i) => {
+            const item = document.createElement('div');
+            item.className = 'btn-choice';
+            item.style.width = '100%';
+            item.style.marginBottom = '10px';
+            item.style.display = 'flex';
+            item.style.justifyContent = 'space-between';
+            item.innerHTML = `<span>#${i+1} ${w.emoji} ${w.name}</span> <span style="color:var(--gold)">${w.trait}</span>`;
+            list.appendChild(item);
+        });
+    }
 
-        function showFinalRank(ranks) {
-            document.getElementById('step-result').classList.remove('hidden');
-            const list = document.getElementById('rank-list');
-            list.innerHTML = "";
-            ranks.forEach((r, i) => {
-                const div = document.createElement('div');
-                div.className = "flex justify-between p-2 bg-white rounded-lg shadow-sm mb-1 text-sm";
-                div.innerHTML = `<span>第${i+1}名: <b>${r.name}</b></span> <span class="text-indigo-600">${prizes[i] || '獎券'}</span>`;
-                list.appendChild(div);
-            });
-            document.getElementById('race-status').innerText = "🏁 比賽結束！";
-        }
-
-        function stopRace() { clearInterval(raceInterval); }
-        function resetUI() { location.reload(); }
-        function resetGame() { db.ref('gameState').set({ status: 'waiting', selections: {} }); }
-
-        init();
-    </script>
+    init();
+</script>
 </body>
 </html>
