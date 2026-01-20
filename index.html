@@ -69,153 +69,97 @@
     </div>
 
 <script>
-    // --- Firebase 配置 ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyBHJtwI42b8i6z7zRw6tDgtR4ITSNKWrf8",
-      authDomain: "aiot-d53dc.firebaseapp.com",
-      databaseURL: "https://aiot-d53dc-default-rtdb.firebaseio.com",
-      projectId: "aiot-d53dc",
-      storageBucket: "aiot-d53dc.firebasestorage.app",
-      messagingSenderId: "1021331253049",
-      appId: "1:1021331253049:web:11f0695e8ab64eae0baae8",
-      measurementId: "G-9YDKS70ZE7"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    // --- Firebase 配置 (維持您的設定) ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBHJtwI42b8i6z7zRw6tDgtR4ITSNKWrf8",
+  authDomain: "aiot-d53dc.firebaseapp.com",
+  databaseURL: "https://aiot-d53dc-default-rtdb.firebaseio.com",
+  projectId: "aiot-d53dc",
+  storageBucket: "aiot-d53dc.firebasestorage.app",
+  messagingSenderId: "1021331253049",
+  appId: "1:1021331253049:web:11f0695e8ab64eae0baae8",
+  measurementId: "G-9YDKS70ZE7"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-    const horseLibrary = [
-        { id: 0, trait: "薪水小偷", spd: 55, sta: 95, color: "#2ed573", desc: "體力極好，適合長跑" },
-        { id: 1, trait: "下班戰神", spd: 45, sta: 60, color: "#ffa502", desc: "最後衝刺會啟動狂暴模式" },
-        { id: 2, trait: "爆肝王", spd: 95, sta: 20, color: "#ff4757", desc: "初期極快，但極速消耗體力" },
-        { id: 3, trait: "咖啡中毒", spd: 75, sta: 45, color: "#1e90ff", desc: "速度起伏大，充滿驚喜" },
-        { id: 4, trait: "甩鍋專家", spd: 60, sta: 70, color: "#eccc68", desc: "穩定型馬匹，無視負面事件" }
-    ];
+let myName = localStorage.getItem('aiot_user') || ""; // 1. 初始化時先嘗試讀取舊紀錄
 
-    const names = ["JULIA", "MOLLY", "DON", "豪哥", "Gimme", "Erick", "韋志", "JULI", "JASON", "KRIS"];
-    let myName = "";
-    const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
+function init() {
+    if (isAdmin) document.getElementById('admin-panel').style.display = 'block';
 
-    function init() {
-        if (isAdmin) document.getElementById('admin-panel').style.display = 'block';
+    // 渲染姓名列表 (代碼同前...)
+    renderNameGrid();
+    // 渲染馬匹列表 (代碼同前...)
+    renderHorseList();
 
-        // 初始化姓名列表
-        const nameGrid = document.getElementById('name-grid');
-        names.forEach(n => {
-            const btn = document.createElement('button');
-            btn.className = 'name-btn'; btn.id = `user-btn-${n}`; btn.innerText = n;
-            btn.onclick = () => login(n);
-            nameGrid.appendChild(btn);
-        });
+    syncFirebase();
+}
 
-        // 初始化馬匹列表
-        const list = document.getElementById('horse-list');
-        horseLibrary.forEach((h, i) => {
-            const card = document.createElement('div');
-            card.className = 'horse-card'; card.id = `h-card-${i}`;
-            card.innerHTML = `
-                <div id="tag-${i}"></div>
-                <div style="font-size:20px; font-weight:bold; color:var(--gold);">${h.trait}</div>
-                <div style="font-size:12px; color:#aaa; margin-bottom:10px;">${h.desc}</div>
-                <div style="font-size:12px;">速度</div>
-                <div class="stat-bar-bg"><div class="stat-fill" style="width:${h.spd}%; background:${h.color};"></div></div>
-                <div style="font-size:12px; margin-top:5px;">耐力</div>
-                <div class="stat-bar-bg"><div class="stat-fill" style="width:${h.sta}%; background:#555;"></div></div>
-            `;
-            card.onclick = () => selectHorse(i);
-            list.appendChild(card);
-        });
-
-        syncFirebase();
-    }
-
-    // --- 核心同步邏輯 ---
-    function syncFirebase() {
-        // 監聽所有人的選馬狀態
-        db.ref('assignments').on('value', snap => {
-            const data = snap.val() || {};
-            // 先重置所有卡片狀態
-            document.querySelectorAll('.horse-card').forEach(c => {
-                c.classList.remove('occupied', 'selected');
-                const tag = c.querySelector('[id^="tag-"]');
-                if(tag) tag.innerHTML = '';
-            });
-
-            // 標記已被選走的馬
-            Object.entries(data).forEach(([user, horseIdx]) => {
-                const card = document.getElementById(`h-card-${horseIdx}`);
-                const tag = document.getElementById(`tag-${horseIdx}`);
-                if(card) {
-                    if (user === myName) {
-                        card.classList.add('selected');
-                        tag.innerHTML = `<span class="occupant-tag">你的馬</span>`;
-                    } else {
-                        card.classList.add('occupied');
-                        tag.innerHTML = `<span class="occupant-tag">騎士: ${user}</span>`;
-                    }
-                }
-            });
-        });
-
-        // 監聽使用者登入
-        db.ref('users').on('value', snap => {
-            const data = snap.val() || {};
-            names.forEach(n => {
-                const btn = document.getElementById(`user-btn-${n}`);
-                if (data[n]) {
-                    btn.classList.add('taken');
-                    if (n === myName) btn.classList.add('me');
-                } else {
-                    btn.classList.remove('taken', 'me');
-                }
-            });
-            if (data[myName]) {
-                document.getElementById('view-login').style.display = 'none';
-                document.getElementById('view-setup').style.display = 'block';
-            } else {
-                // 如果管理員清空了資料，強制跳回登入
-                document.getElementById('view-login').style.display = 'block';
-                document.getElementById('view-setup').style.display = 'none';
-                myName = "";
-            }
-        });
-    }
-
-    function login(n) {
-        myName = n;
-        db.ref(`users/${n}`).set(true);
-    }
-
-    function selectHorse(idx) {
-        if (!myName) return;
-        // 先檢查這匹馬有沒有人選 (防止手速競爭)
-        db.ref('assignments').once('value', snap => {
-            const data = snap.val() || {};
-            const isTaken = Object.values(data).includes(idx);
-            const myOldPick = data[myName];
-
-            if (isTaken && myOldPick !== idx) {
-                alert("慢了一步！這匹馬剛被選走了。");
-            } else {
-                db.ref(`assignments/${myName}`).set(idx);
-            }
-        });
-    }
-
-    // --- 管理員功能 ---
-    function resetGame() {
-        if (confirm("【警告】將重置所有玩家登入狀態與選馬結果，確定嗎？")) {
-            db.ref().set(null); // 清空全域
-            alert("數據已清空");
+function syncFirebase() {
+    // 監聽使用者狀態
+    db.ref('users').on('value', snap => {
+        const data = snap.val() || {};
+        
+        // 2. 核心修正：如果管理員清空了資料庫，清除本地紀錄
+        if (myName && !data[myName]) {
+            localStorage.removeItem('aiot_user');
+            myName = "";
+            location.reload(); // 強制重新整理回到初始狀態
+            return;
         }
-    }
 
-    function startRace() {
-        // 跳轉到賽馬畫面邏輯
-        alert("準備開賽！(正在啟動同步引擎)");
-        // 這裡可以呼叫之前的賽馬 UI 邏輯...
-    }
+        names.forEach(n => {
+            const btn = document.getElementById(`user-btn-${n}`);
+            if (data[n]) {
+                btn.classList.add('taken');
+                if (n === myName) btn.classList.add('me');
+            } else {
+                btn.classList.remove('taken', 'me');
+            }
+        });
 
-    init();
+        // 3. 自動切換視窗：如果有名字且在登入名單內，直接看選馬區
+        if (myName && data[myName]) {
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-setup').style.display = 'block';
+            document.getElementById('user-display').innerText = `你好，${myName}`;
+        } else {
+            document.getElementById('view-login').style.display = 'block';
+            document.getElementById('view-setup').style.display = 'none';
+        }
+    });
+
+    // 監聽選馬狀態 (代碼同前...)
+    db.ref('assignments').on('value', snap => {
+        updateHorseCardsUI(snap.val() || {});
+    });
+}
+
+function login(n) {
+    // 檢查是否已被別人登入
+    db.ref(`users/${n}`).once('value', snap => {
+        if (snap.val() && n !== myName) {
+            alert("此身分已被佔用！");
+        } else {
+            myName = n;
+            localStorage.setItem('aiot_user', n); // 4. 登入時存入本地
+            db.ref(`users/${n}`).set(true);
+        }
+    });
+}
+
+// 管理員重置功能
+function resetGame() {
+    if (confirm("確定重置？這會把所有人踢回登入頁面並清空馬匹！")) {
+        // 先清空所有資料庫內容
+        db.ref().set(null).then(() => {
+            localStorage.removeItem('aiot_user'); // 管理員自己也重置
+            location.reload();
+        });
+    }
+}
 </script>
 </body>
 </html>
+
