@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>2026 AIOT 尾牙賽馬 - 馬年行大運 </title>
+    <title>2026 AIOT 尾牙賽馬 - 管理員測試版 </title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
@@ -37,7 +37,7 @@
         /* 賽道區 */
         .track-container { position: relative; width: 98vw; flex-grow: 1; background: var(--track-bg); border: 4px solid #333; border-radius: 10px; display: none; margin-top: 20px; overflow: hidden; padding-top: 40px; }
         .finish-line { position: absolute; right: 80px; top: 0; bottom: 0; width: 30px; background: repeating-linear-gradient(0deg, #fff, #fff 15px, #000 15px, #000 30px); border-left: 4px solid var(--gold); z-index: 1; }
-        .lane { position: relative; height: 9.8%; border-bottom: 1px dashed rgba(255,255,255,0.05); display: flex; align-items: center; }
+        .lane { position: relative; height: auto; min-height: 60px; border-bottom: 1px dashed rgba(255,255,255,0.05); display: flex; align-items: center; }
         
         .horse-container { position: absolute; left: 10px; z-index: 10; display: flex; align-items: center; width: 130px; transition: left 0.3s cubic-bezier(0.1, 0.7, 0.1, 1); }
         .horse-icon { font-size: 32px; transform: scaleX(-1); margin-right: 5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
@@ -47,10 +47,8 @@
         
         .status-bubble { position: absolute; top: -42px; left: 0; font-size: 12px; padding: 4px 12px; border-radius: 12px; display: none; z-index: 100; font-weight: bold; color: white; border: 2px solid white; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
-        #start-btn { padding: 18px 80px; font-size: 26px; background: linear-gradient(135deg, var(--primary), #8e0000); color: white; border: none; border-radius: 50px; cursor: pointer; margin: 30px; display: none; font-weight: bold; z-index: 500; }
+        #start-btn { padding: 18px 80px; font-size: 26px; background: linear-gradient(135deg, var(--primary), #8e0000); color: white; border: none; border-radius: 50px; cursor: pointer; margin: 30px; display: none; font-weight: bold; z-index: 500; box-shadow: 0 0 20px var(--primary); }
         #leaderboard { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; background: white; color: #111; border-radius: 20px; padding: 25px; z-index: 1000; display: none; border: 5px solid var(--gold); }
-        
-        #admin-panel { position: fixed; bottom: 10px; right: 10px; z-index: 1000; }
     </style>
 </head>
 <body>
@@ -67,26 +65,22 @@
         <div class="horse-select-grid" id="select-grid"></div>
     </div>
 
-    <button id="start-btn">🏁 開賽！(管理員按鈕)</button>
+    <button id="start-btn">🏁 強制開賽！</button>
 
     <div class="track-container" id="track">
         <div class="finish-line"></div>
-        <div id="lanes-box" style="height: 100%;"></div>
+        <div id="lanes-box" style="height: 100%; display: flex; flex-direction: column;"></div>
     </div>
 
     <div id="leaderboard">
         <h2 style="text-align:center; color: var(--primary); margin: 0; font-size: 32px;">🏆 FINAL RANK 🏆</h2>
         <div id="leaderboard-list" style="margin-top: 20px;"></div>
-        <button onclick="resetData()" style="width:100%; padding:15px; margin-top:20px; background: #1a1a1a; color: white; border-radius: 10px; cursor:pointer; font-weight: bold;">管理員重置</button>
-    </div>
-
-    <div id="admin-panel" style="display:none;">
-        <button onclick="resetData()" style="padding:5px; opacity:0.5;">重置數據</button>
+        <button onclick="resetData()" style="width:100%; padding:15px; margin-top:20px; background: #1a1a1a; color: white; border-radius: 10px; cursor:pointer; font-weight: bold;">清除數據重來</button>
     </div>
 
 <script>
     // --- 1. Firebase 配置 ---
-  const firebaseConfig = {
+   const firebaseConfig = {
   apiKey: "AIzaSyBHJtwI42b8i6z7zRw6tDgtR4ITSNKWrf8",
   authDomain: "aiot-d53dc.firebaseapp.com",
   databaseURL: "https://aiot-d53dc-default-rtdb.firebaseio.com",
@@ -99,35 +93,32 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- 2. 原始遊戲數據 ---
     const horseLibrary = [
-        { id: 0, trait: "薪水小偷", stats: {spd: 60, sta: 95, burst: 40}, desc: "懂得在工作中摸魚節省體力，穩定性最高。"},
-        { id: 1, trait: "下班戰神", stats: {spd: 50, sta: 65, burst: 95}, desc: "中後段發力，一旦看到終點線會瘋狂加速。"},
-        { id: 2, trait: "爆肝王", stats: {spd: 95, sta: 25, burst: 80}, desc: "起步超快，但如果不休息絕對會爆肝。"},
-        { id: 3, trait: "會議發言機", stats: {spd: 75, sta: 60, burst: 60}, desc: "各項數值平均，適合穩打穩紮的玩家。"},
-        { id: 4, trait: "咖啡中毒者", stats: {spd: 80, sta: 45, burst: 75}, desc: "依賴咖啡因（隨機衝刺），體力波動大。"},
-        { id: 5, trait: "甩鍋專業戶", stats: {spd: 45, sta: 85, burst: 30}, desc: "運氣型馬匹，能完全免疫滑倒事件。"},
-        { id: 6, trait: "加班邊緣人", stats: {spd: 55, sta: 90, burst: 50}, desc: "存在感低但耐力十足，默默爬上首位。"},
-        { id: 7, trait: "截稿衝刺", stats: {spd: 35, sta: 70, burst: 99}, desc: "隱藏王者，雖然慢但極易觸發神級衝刺。"},
-        { id: 8, trait: "出一張嘴", stats: {spd: 85, sta: 50, burst: 70}, desc: "高效率代表，會一直給身邊的人壓力。"},
-        { id: 9, trait: "中庸之道", stats: {spd: 70, sta: 75, burst: 65}, desc: "數據平衡之王，體力分配非常科學。"}
+        { id: 0, trait: "薪水小偷", stats: {spd: 60, sta: 95, burst: 40}, desc: "摸魚節省體力，穩定性最高。"},
+        { id: 1, trait: "下班戰神", stats: {spd: 50, sta: 65, burst: 95}, desc: "看到終點線會瘋狂加速。"},
+        { id: 2, trait: "爆肝王", stats: {spd: 95, sta: 25, burst: 80}, desc: "起步超快，但體力消耗極速。"},
+        { id: 3, trait: "會議發言機", stats: {spd: 75, sta: 60, burst: 60}, desc: "各項數值平均。"},
+        { id: 4, trait: "咖啡中毒者", stats: {spd: 80, sta: 45, burst: 75}, desc: "依賴咖啡因，體力波動大。"},
+        { id: 5, trait: "甩鍋專業戶", stats: {spd: 45, sta: 85, burst: 30}, desc: "完全免疫滑倒事件。"},
+        { id: 6, trait: "加班邊緣人", stats: {spd: 55, sta: 90, burst: 50}, desc: "存在感低但耐力十足。"},
+        { id: 7, trait: "截稿衝刺", stats: {spd: 35, sta: 70, burst: 99}, desc: "雖然慢但極易觸發神級衝刺。"},
+        { id: 8, trait: "出一張嘴", stats: {spd: 85, sta: 50, burst: 70}, desc: "高效率代表，給身邊人壓力。"},
+        { id: 9, trait: "中庸之道", stats: {spd: 70, sta: 75, burst: 65}, desc: "體力分配非常科學。"}
     ];
 
     let names = ["JULIA", "MOLLY", "DON", "豪哥", "Gimme", "Erick", "韋志", "JULI", "JASON", "KRIS"];
     const colors = ["#FF5252", "#FFD700", "#E040FB", "#00E676", "#2979FF", "#FF9100", "#40C4FF", "#FF1744", "#F4FF81", "#B2FF59"];
 
-    // 狀態變數
     let myName = localStorage.getItem('my_race_name') || "";
     const urlParams = new URLSearchParams(window.location.search);
     const isAdmin = urlParams.get('admin') === '1';
     let raceStarted = false;
     let finishedHorses = [];
 
-    // --- 3. 初始化 UI ---
     function init() {
-        if (isAdmin) document.getElementById('admin-panel').style.display = 'block';
+        // 管理員立即看到開賽按鈕，方便測試
+        if (isAdmin) document.getElementById('start-btn').style.display = 'block';
         
-        // 渲染名字列表
         const nameGrid = document.getElementById('name-grid');
         names.forEach(n => {
             const btn = document.createElement('button');
@@ -138,7 +129,6 @@
             nameGrid.appendChild(btn);
         });
 
-        // 渲染馬匹列表
         const horseGrid = document.getElementById('select-grid');
         horseLibrary.forEach((h, i) => {
             const div = document.createElement('div');
@@ -150,8 +140,6 @@
                 <b style="color:var(--gold); font-size:16px;">${h.trait}</b>
                 <div class="stat-group">
                     <div class="stat-row"><span class="stat-label">效率</span><div class="stat-bar"><div class="stat-fill" style="width:${h.stats.spd}%"></div></div></div>
-                    <div class="stat-row"><span class="stat-label">體力</span><div class="stat-bar"><div class="stat-fill" style="width:${h.stats.sta}%"></div></div></div>
-                    <div class="stat-row"><span class="stat-label">爆發</span><div class="stat-bar"><div class="stat-fill" style="width:${h.stats.burst}%"></div></div></div>
                 </div>
                 <div class="horse-desc">${h.desc}</div>
             `;
@@ -162,9 +150,7 @@
         listenFirebase();
     }
 
-    // --- 4. Firebase 監聽邏輯 ---
     function listenFirebase() {
-        // 監聽誰選了哪些名字
         db.ref('users').on('value', (snap) => {
             const users = snap.val() || {};
             names.forEach(n => {
@@ -182,7 +168,6 @@
             });
         });
 
-        // 監聽馬匹選擇狀態
         db.ref('assignments').on('value', (snap) => {
             const assignments = snap.val() || {};
             horseLibrary.forEach((_, i) => {
@@ -191,7 +176,6 @@
                 const label = slot.querySelector('.occupied-label');
                 if (label) label.remove();
 
-                // 找誰選了這隻馬
                 const owner = Object.keys(assignments).find(name => assignments[name] === i);
                 if (owner) {
                     if (owner === myName) {
@@ -205,15 +189,8 @@
                     }
                 }
             });
-
-            // 如果是管理員，檢查是否所有人都選好，顯示按鈕
-            if (isAdmin) {
-                const count = Object.keys(assignments).length;
-                if (count >= names.length) document.getElementById('start-btn').style.display = 'block';
-            }
         });
 
-        // 監聽開賽信號
         db.ref('gameState').on('value', (snap) => {
             const state = snap.val();
             if (state && state.status === 'racing' && !raceStarted) {
@@ -222,7 +199,6 @@
         });
     }
 
-    // --- 5. 互動邏輯 ---
     function login(n) {
         myName = n;
         localStorage.setItem('my_race_name', n);
@@ -231,33 +207,19 @@
 
     function selectHorse(idx) {
         if (!myName) return;
-        // 檢查該馬是否被佔用
-        db.ref('assignments').once('value', (snap) => {
-            const data = snap.val() || {};
-            const isTaken = Object.values(data).includes(idx);
-            const currentOwner = Object.keys(data).find(k => data[k] === idx);
-
-            if (isTaken && currentOwner !== myName) {
-                alert("這隻馬剛被搶走了！");
-                return;
-            }
-
-            // 更新選擇 (Firebase 會自動同步)
-            db.ref(`assignments/${myName}`).set(idx);
-        });
+        db.ref(`assignments/${myName}`).set(idx);
     }
 
     function resetData() {
-        if (!confirm("確定要重置所有人的資料嗎？")) return;
         db.ref().set(null);
         localStorage.clear();
         location.reload();
     }
 
-    // --- 6. 賽馬核心引擎 (保留你的原始算法) ---
+    // --- 賽馬核心引擎 ---
     document.getElementById('start-btn').onclick = function() {
         db.ref('assignments').once('value', (snap) => {
-            const participants = snap.val();
+            const participants = snap.val() || {};
             db.ref('gameState').set({
                 status: 'racing',
                 seed: Math.random(),
@@ -276,29 +238,26 @@
         const lanesBox = document.getElementById('lanes-box');
         lanesBox.innerHTML = "";
 
-        // 建立比賽馬匹對象 (由 participants 映射)
         const finalParticipants = Object.keys(participants).map((name, idx) => {
             const horseIdx = participants[name];
-            return {
-                name: name,
-                horseData: horseLibrary[horseIdx],
-                color: colors[idx % colors.length]
-            };
+            return { name: name, horseData: horseLibrary[horseIdx], color: colors[idx % colors.length] };
         });
+
+        // 調整賽道高度，讓畫面更好看
+        const laneHeight = finalParticipants.length > 0 ? (100 / finalParticipants.length) : 100;
 
         finalParticipants.forEach((item, idx) => {
             const lane = document.createElement('div');
             lane.className = 'lane';
+            lane.style.height = `${laneHeight}%`;
             lane.innerHTML = `<div class="horse-container" id="horse-${item.horseData.id}"><div class="status-bubble" id="status-${item.horseData.id}"></div><div class="horse-icon" style="color:${item.color}">🐎</div><div class="horse-info-mini"><div class="horse-label" style="font-size:12px;">${item.name}</div><div class="stamina-mini"><div class="stamina-mini-fill" id="stamina-fill-${item.horseData.id}"></div></div></div></div>`;
             lanesBox.appendChild(lane);
         });
 
-        // 啟動你的原始 Race 邏輯
         runRaceEngine(seed, finalParticipants);
     }
 
     function runRaceEngine(seed, list) {
-        // 使用同步種子初始化隨機
         let seedVal = seed;
         function syncRandom() {
             seedVal = (seedVal * 9301 + 49297) % 233280;
@@ -322,7 +281,6 @@
             horses.forEach(h => {
                 if (h.finished) return;
 
-                // --- 體力與消耗邏輯 (完全保留你的原始算法) ---
                 if (!h.isStalled) {
                     let drainMult = h.id === 2 ? 1.8 : (h.id === 0 ? 0.45 : 1.0);
                     let staminaDrain = (h.speed * 0.06 + 0.12) * drainMult; 
@@ -355,7 +313,6 @@
                     h.speed = ((h.speed * 0.93) + accel + (h.stats.spd * 0.002)) * fatigueScale;
                 }
 
-                // 隨機事件
                 if (Date.now() - h.lastEventTime > h.nextCooldown && !h.finished && !h.isStalled) {
                     h.lastEventTime = Date.now();
                     h.nextCooldown = 4000 + (syncRandom() * 4000);
@@ -386,7 +343,6 @@
                 sFill.style.background = isRedZone ? 'var(--danger)' : (h.currStamina < 50 ? 'var(--warning)' : 'var(--success)');
                 
                 let rot = Math.sin(h.pos / 10) * (h.speed * 2);
-                if (h.isBursting) rot *= 1.5;
                 element.style.transform = `rotate(${rot}deg)`;
 
                 if (h.pos >= finishLinePos && !h.finished) {
