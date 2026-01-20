@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 AIOT 賽馬 - 最終刺激同步版</title>
+    <title>2026 AIOT 賽馬 - 全同步最終版</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #d32f2f; --gold: #ffd700; --track-bg: #1a1a1a; --success: #4caf50; --danger: #ff5252; --card-bg: #252525; }
+        :root { --primary: #d32f2f; --gold: #ffd700; --track-bg: #1a1a1a; --success: #4caf50; --card-bg: #252525; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'PingFang TC', sans-serif; background: #0f0f0f; color: white; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         #admin-panel { background: rgba(211, 47, 47, 0.9); padding: 8px; display: none; border-bottom: 2px solid var(--gold); z-index: 1000; }
@@ -27,11 +27,11 @@
         .track-container { width: 100vw; flex: 1; background: var(--track-bg); display: none; position: relative; overflow: hidden; padding-top: 50px; }
         .lane { position: relative; height: 80px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .horse-container { position: absolute; left: 0%; transition: left 0.15s linear; display: flex; flex-direction: column; align-items: center; width: 90px; }
-        .horse-icon { font-size: 35px; transform: scaleX(-1); transition: transform 0.2s; }
+        .horse-icon { font-size: 35px; transform: scaleX(-1); }
         .is-racing .horse-icon { animation: gallop 0.4s infinite ease-in-out; }
         @keyframes gallop { 0%, 100% { transform: scaleX(-1) translateY(0); } 50% { transform: scaleX(-1) translateY(-6px); } }
         .stalled .horse-icon { transform: scaleX(-1) rotate(90deg) !important; animation: none !important; opacity: 0.7; }
-        .status-bubble { position: absolute; top: -38px; left: 50%; transform: translateX(-50%); font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: bold; white-space: nowrap; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .status-bubble { position: absolute; top: -38px; left: 50%; transform: translateX(-50%); font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: bold; white-space: nowrap; z-index: 100; }
         .finish-emoji { position: absolute; top: -25px; font-size: 24px; display: none; }
         #start-btn { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 15px 50px; font-size: 18px; background: var(--primary); color: white; border: none; border-radius: 30px; font-weight: bold; z-index: 500; display: none; }
         #leaderboard { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px; }
@@ -155,7 +155,15 @@
             const users = snap.val() || {};
             names.forEach(n => {
                 const btn = document.getElementById(`name-${n}`);
-                if (users[n]) btn.classList.add('taken'); else btn.classList.remove('taken');
+                if (users[n]) { 
+                    btn.classList.add('taken');
+                    if (n === myName) { 
+                        document.getElementById('user-login').style.display = 'none'; 
+                        document.getElementById('setup').style.display = 'block'; 
+                        document.getElementById('identity-area').style.display = 'flex';
+                        document.getElementById('user-badge').innerText = `👤 您是：${n}`;
+                    }
+                } else btn.classList.remove('taken');
             });
             if(isAdmin) document.getElementById('ready-count').innerText = Object.keys(users).length;
         });
@@ -167,7 +175,7 @@
                 if (owner) { if (owner === myName) slot.classList.add('my-pick'); else slot.classList.add('occupied'); }
             });
         });
-        // 核心同步：渲染所有手機畫面
+        // 核心同步：監聽 live 坐標
         db.ref('raceLive').on('value', snap => {
             const liveData = snap.val();
             if (!liveData || !raceStarted) return;
@@ -182,8 +190,8 @@
                     else bubble.style.display = 'none';
                     if (data.stalled) el.classList.add('stalled'); else el.classList.remove('stalled');
                     if (data.rankEmoji) {
-                        document.getElementById(`emoji-${horseId}`).innerText = data.rankEmoji;
-                        document.getElementById(`emoji-${horseId}`).style.display = 'block';
+                        const em = document.getElementById(`emoji-${horseId}`);
+                        em.innerText = data.rankEmoji; em.style.display = 'block';
                         el.classList.remove('is-racing');
                     }
                 }
@@ -191,9 +199,9 @@
         });
     }
 
-    function login(n) { myName = n; localStorage.setItem('aiot_race_name', n); db.ref(`users/${n}`).set(true); }
+    function login(n) { myName = n; localStorage.setItem('aiot_race_name', n); db.ref(`users/${n}`).set(true); document.getElementById('bgm').play().catch(()=>{}); }
     function logout() { if (confirm("更換身份？")) { db.ref(`users/${myName}`).remove(); db.ref(`assignments/${myName}`).remove(); localStorage.removeItem('aiot_race_name'); location.reload(); } }
-    function hardReset() { if (confirm("重置遊戲？")) { db.ref().set(null); location.reload(); } }
+    function hardReset() { if (confirm("重置遊戲？")) { db.ref().set(null); localStorage.removeItem('aiot_race_name'); location.reload(); } }
     function selectHorse(idx) { if (myName) db.ref(`assignments/${myName}`).set(idx); }
 
     document.getElementById('start-btn').onclick = function() {
@@ -210,7 +218,6 @@
         document.getElementById('setup').style.display = 'none';
         document.getElementById('identity-area').style.display = 'none';
         document.getElementById('track').style.display = 'block';
-        document.getElementById('bgm').play().catch(()=>{});
         document.getElementById('snd-start').play();
         const lanesBox = document.getElementById('lanes-box'); lanesBox.innerHTML = "";
         Object.keys(participants).forEach((name, idx) => {
@@ -228,12 +235,12 @@
         });
     }
 
-    // --- 管理者計算引擎 (Admin Only) ---
+    // --- 管理者計算引擎 (只在 Admin 手機執行) ---
     function runAdminEngine(participants) {
         if (!isAdmin) return;
         let horses = Object.keys(participants).map(name => ({
             id: participants[name], owner: name, pos: 0, speed: 0, sta: 100, stalled: false, finished: false,
-            stats: horseLibrary[participants[name]].stats, msg: "", msgColor: "", rankEmoji: "", eventCooldown: 0
+            stats: horseLibrary[participants[name]].stats, msg: "", msgColor: "", rankEmoji: ""
         }));
         let finishedCount = 0;
         const results = [];
@@ -243,30 +250,8 @@
             const liveUpdate = {};
             horses.forEach(h => {
                 if (h.finished) return;
-                
                 if (!h.stalled) {
-                    // 事件判定
-                    if (h.eventCooldown > 0) h.eventCooldown -= 100;
-                    
-                    if (h.eventCooldown <= 0) {
-                        const r = Math.random();
-                        if (r < 0.12 && h.id !== 5) { // 滑倒機率
-                            h.pos = Math.max(0, h.pos - 60);
-                            h.speed = 0; h.msg = "⛸️ 滑倒!!"; h.msgColor = "#546e7a";
-                            h.eventCooldown = 2000;
-                            setTimeout(() => { if(h.msg === "⛸️ 滑倒!!") h.msg = ""; }, 1500);
-                        } else if (r < 0.25) { // 衝刺機率
-                            h.speed += 8; h.msg = "⚡ 衝刺!"; h.msgColor = "orange";
-                            h.eventCooldown = 2500;
-                            setTimeout(() => { if(h.msg === "⚡ 衝刺!") h.msg = ""; }, 1500);
-                        }
-                    }
-
-                    // 體力消耗 (加速中扣更多)
-                    let staLoss = (h.speed * 0.05 + 0.12);
-                    if (h.msg === "⚡ 衝刺!") staLoss *= 1.8;
-                    h.sta = Math.max(0, h.sta - staLoss);
-
+                    h.sta -= (h.speed * 0.04 + 0.12);
                     if (h.sta <= 0) {
                         h.stalled = true; h.speed = 0; h.msg = "🤮 爆肝！"; h.msgColor = "red";
                         setTimeout(() => { 
@@ -277,13 +262,12 @@
                             }, 1000);
                         }, 1000);
                     } else {
-                        let acc = Math.random() * 0.4 + (h.stats.spd * 0.005);
-                        if (h.id === 1 && h.pos > 750) acc += 1.5; // 下班戰神
-                        h.speed = (h.speed * 0.88) + acc;
+                        let acc = Math.random() * 0.5 + (h.stats.spd * 0.005);
+                        if (Math.random() < 0.05) { h.speed += 5; h.msg = "⚡ 衝刺!"; h.msgColor = "orange"; setTimeout(() => h.msg="", 1000); }
+                        h.speed = (h.speed * 0.85) + acc;
                     }
                 }
-                
-                h.pos += h.speed * 0.4;
+                h.pos += h.speed * 0.45;
                 if (h.pos >= 1000) {
                     h.pos = 1000; h.finished = true; finishedCount++;
                     h.rankEmoji = emojiMap[finishedCount] || "😭";
@@ -301,7 +285,6 @@
 
     function showLeaderboard(results) {
         document.getElementById('leaderboard').style.display = 'flex';
-        document.getElementById('snd-win').play();
         const listEl = document.getElementById('leaderboard-list'); listEl.innerHTML = "";
         const prizes = {1:"$2500 現金", 2:"$1000 禮券", 3:"$1000 禮券", 4:"$1000 禮券", 5:"$1000 禮券", 6:"$500", 7:"$400", 8:"$300", 9:"$200", 10:"$100"};
         results.forEach((res, i) => {
