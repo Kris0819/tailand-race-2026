@@ -3,75 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 AIOT 尾牙賽馬 - 絕對同步版</title>
+    <title>2026 AIOT 尾牙賽馬 - PO 終極版</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #d32f2f; --gold: #ffd700; --track-bg: #2c3e50; --success: #4caf50; --warning: #ffeb3b; --danger: #ff5252; --recover: #00bcd4; --sprint: #ff5722; }
-        body { font-family: 'PingFang TC', sans-serif; background: #121212; color: white; margin: 0; padding: 10px; height: 100vh; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
+        :root { 
+            --primary: #ff3e3e; --gold: #ffd700; --track: #222;
+            --success: #00ff88; --danger: #ff0055; --sprint: #ffaa00; --recover: #00d4ff;
+        }
+
+        body { font-family: 'PingFang TC', sans-serif; background: #0a0a0a; color: white; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
+
+        /* 全域遊戲化控制 */
+        .btn-ui { border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 0 rgba(0,0,0,0.3); }
+        .btn-ui:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+
+        /* Header */
+        .header-bar { 
+            background: linear-gradient(180deg, #333 0%, #111 100%); 
+            padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; 
+            height: 60px; border-bottom: 2px solid var(--gold); position: relative; z-index: 1000;
+        }
+
+        /* 1. 選人畫面 (恢復精緻格點) */
+        .page { display: none; height: calc(100vh - 60px); width: 100vw; position: absolute; flex-direction: column; overflow-y: auto; }
+        .page.active { display: flex; }
         
-        /* 簡約 Admin 工具 */
-        #admin-toolbar { position: fixed; top: 10px; right: 10px; display: none; z-index: 1001; }
-        .admin-btn { padding: 5px 12px; background: rgba(0,0,0,0.8); color: white; border: 1px solid var(--gold); border-radius: 4px; font-size: 12px; cursor: pointer; }
+        .login-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 20px; width: 100%; box-sizing: border-box; }
+        .name-card { 
+            background: #222; border: 2px solid #444; border-radius: 12px; padding: 25px 10px;
+            text-align: center; font-size: 20px; font-weight: 800; color: #fff; position: relative;
+        }
+        .name-card.taken { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
 
-        /* 選人與狀態 */
-        .user-info-bar { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 10px 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid var(--gold); }
-        #user-login { background: #1e1e1e; padding: 30px; border-radius: 20px; text-align: center; position: fixed; top: 50%; transform: translateY(-50%); width: 85%; z-index: 200; border: 2px solid var(--gold); }
-        .name-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
-        .name-btn { padding: 15px; background: #333; border: 1px solid #555; color: white; border-radius: 10px; font-weight: bold; }
-        .name-btn.taken { opacity: 0.2; pointer-events: none; }
+        /* 2. 選馬畫面 (4能力值 + 搞笑介紹) */
+        .horse-list { padding: 15px; }
+        .horse-card { 
+            background: #1a1a1a; border: 2px solid #333; border-radius: 16px; padding: 15px; 
+            margin-bottom: 15px; position: relative; border-left: 6px solid #444;
+        }
+        .horse-card.selected { border-color: var(--success); background: #12221a; }
+        .horse-card.occupied { opacity: 0.3; pointer-events: none; }
+        
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+        .stat-label { font-size: 11px; color: #888; margin-bottom: 3px; }
+        .stat-bar { height: 6px; background: #000; border-radius: 3px; overflow: hidden; }
+        .stat-fill { height: 100%; background: var(--gold); }
+        .horse-desc { font-size: 12px; color: #bbb; font-style: italic; border-top: 1px solid #333; padding-top: 8px; }
 
-        /* 選馬 */
-        .setup-area { background: #1e1e1e; padding: 15px; border-radius: 15px; width: 95%; max-width: 1000px; overflow-y: auto; display: none; }
-        .horse-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
-        .horse-slot { background: #252525; padding: 12px; border-radius: 10px; border: 2px solid #333; position: relative; }
-        .horse-slot.my-pick { border-color: var(--success); background: #1a2a1a; }
-        .horse-slot.occupied { opacity: 0.2; pointer-events: none; }
-        .occupied-label { position: absolute; top: 5px; right: 5px; background: var(--primary); font-size: 10px; padding: 2px 5px; border-radius: 3px; }
+        /* 3. 比賽畫面 (遊戲化) */
+        #page-track { background: #111; overflow: hidden; }
+        .track-bg { flex-grow: 1; position: relative; background: #151515; }
+        .lane { position: relative; border-bottom: 1px solid #252525; height: 18%; display: flex; align-items: center; }
+        
+        .finish-line { 
+            position: absolute; right: 0; top: 0; bottom: 0; width: 40px; 
+            background: repeating-linear-gradient(45deg, #fff, #fff 10px, #000 10px, #000 20px); 
+            border-left: 4px solid var(--gold); box-shadow: -10px 0 20px rgba(0,0,0,0.5); z-index: 5;
+        }
 
-        /* 賽道 */
-        .track-container { position: relative; width: 98vw; flex-grow: 1; background: var(--track-bg); display: none; overflow: hidden; border: 2px solid #333; }
-        .finish-line { position: absolute; right: 60px; top: 0; bottom: 0; width: 20px; background: repeating-linear-gradient(0deg, #fff, #fff 10px, #000 10px, #000 20px); opacity: 0.2; }
-        .lane { position: relative; border-bottom: 1px dashed rgba(255,255,255,0.05); display: flex; align-items: center; }
-        .horse-container { position: absolute; left: 0; display: flex; align-items: center; transition: left 0.05s linear; }
-        .horse-icon { font-size: 28px; transform: scaleX(-1); }
-        .status-bubble { position: absolute; top: -35px; left: 0; font-size: 10px; padding: 3px 8px; border-radius: 10px; display: none; white-space: nowrap; border: 1px solid white; }
+        /* 馬匹 Pawn */
+        .horse-pawn { position: absolute; left: 0; display: flex; align-items: center; width: 140px; transition: left 0.1s linear; }
+        .horse-visual { font-size: 40px; transform: scaleX(-1); animation: move 0.4s infinite; }
+        .horse-visual.sprinting { animation-duration: 0.2s; filter: drop-shadow(0 0 10px var(--sprint)); }
+        .horse-visual.recovering { opacity: 0.5; animation: none; }
 
-        #start-btn { padding: 15px 50px; font-size: 22px; background: var(--primary); color: white; border-radius: 40px; border: none; font-weight: bold; margin: 20px; display: none; z-index: 500; }
-        #leaderboard { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; background: white; color: #111; border-radius: 20px; padding: 20px; z-index: 1000; display: none; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
+        @keyframes move { 0%, 100% { transform: scaleX(-1) translateY(0); } 50% { transform: scaleX(-1) translateY(-6px); } }
+
+        /* 對話框與泡泡 */
+        .speech-bubble {
+            position: absolute; top: -50px; left: 10px; background: white; color: black;
+            padding: 5px 12px; border-radius: 12px; font-size: 13px; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 20; white-space: nowrap;
+        }
+        .speech-bubble::after {
+            content: ''; position: absolute; bottom: -8px; left: 15px;
+            border-width: 8px 8px 0; border-style: solid; border-color: white transparent;
+        }
+        .bubble-danger { background: var(--danger); color: white; }
+        .bubble-danger::after { border-color: var(--danger) transparent; }
+        
+        .finish-emoji { font-size: 30px; position: absolute; top: -40px; left: 20px; animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+
+        /* Stamina Bar */
+        .stamina-container { width: 50px; height: 4px; background: #000; border-radius: 2px; margin-top: 5px; overflow: hidden; }
+        .stamina-fill { height: 100%; background: var(--success); transition: width 0.3s; }
+
+        /* 管理員介面 */
+        .admin-persistent-ctrl { position: fixed; bottom: 20px; left: 20px; z-index: 9999; display: none; gap: 10px; }
+        .btn-admin-reset { background: var(--danger); color: white; padding: 12px 20px; border-radius: 30px; }
     </style>
 </head>
 <body>
 
-    <div id="admin-toolbar">
-        <button class="admin-btn" onclick="resetData()">重置遊戲</button>
+<audio id="bgm" loop src="https://assets.mixkit.co/music/preview/mixkit-fast-game-action-loop-460.mp3"></audio>
+
+<div class="header-bar" id="header">
+    <button class="btn-ui" id="btn-back-to-login" onclick="logout()" style="background:#444; color:white; padding:5px 15px;">⬅ 返回選人</button>
+    <div id="header-user-info" style="text-align:right;">
+        <div style="font-size:10px; color:#888;">PLAYER</div>
+        <div id="label-user-name" style="font-weight:bold; color:var(--gold);">GUEST</div>
     </div>
+</div>
 
-    <div id="user-login">
-        <h3>WHO ARE YOU?</h3>
-        <div class="name-grid" id="name-grid"></div>
+<div id="page-login" class="page active">
+    <div style="text-align:center; padding:30px 0;">
+        <h1 style="color:var(--gold); margin:0; letter-spacing:4px;">RACE 2026</h1>
+        <p style="color:#666;">SELECT YOUR CHARACTER</p>
     </div>
+    <div class="login-grid" id="login-grid"></div>
+</div>
 
-    <div id="setup" class="setup-area">
-        <div class="user-info-bar">
-            <span>身分：<b id="my-name-display" style="color:var(--gold)"></b></span>
-            <button onclick="backToLogin()" style="background:none; border:1px solid #666; color:#aaa; font-size:12px; padding:2px 8px;">重選人物</button>
-        </div>
-        <div class="horse-select-grid" id="select-grid"></div>
-    </div>
+<div id="page-setup" class="page">
+    <div class="horse-list" id="horse-selection-list"></div>
+</div>
 
-    <button id="start-btn" onclick="triggerStart()">🏁 開賽！</button>
-
-    <div class="track-container" id="track">
+<div id="page-track" class="page">
+    <div class="track-bg">
         <div class="finish-line"></div>
-        <div id="lanes-box" style="height: 100%;"></div>
+        <div id="lanes-render-area" style="height:100%;"></div>
     </div>
+</div>
 
-    <div id="leaderboard">
-        <h2 style="text-align:center; color: var(--primary);">🏆 FINAL RANK</h2>
-        <div id="leaderboard-list"></div>
-        <button onclick="location.reload()" style="width:100%; padding:12px; margin-top:15px; background: #333; color: white; border-radius: 8px;">返回</button>
+<div class="admin-persistent-ctrl" id="admin-ctrl">
+    <button class="btn-ui btn-admin-reset" onclick="adminReset()">🔄 全場重置</button>
+    <button class="btn-ui" id="admin-start-btn" onclick="adminStart()" style="background:var(--success); color:black; padding:12px 25px;">🏁 開始比賽</button>
+</div>
+
+<div id="leaderboard-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; display:none; align-items:center; justify-content:center;">
+    <div style="background:white; color:black; width:85%; border-radius:20px; padding:30px; text-align:center;">
+        <h2 style="color:var(--danger);">🏆 FINAL STANDINGS</h2>
+        <div id="rankings-list" style="margin:20px 0; font-weight:bold;"></div>
+        <button class="btn-ui" onclick="adminReset()" style="background:#111; color:white; width:100%; padding:15px; display:none;" id="lb-reset-btn">下一輪比賽</button>
+        <p id="lb-wait-msg" style="color:#999; font-size:12px;">等待管理員重置...</p>
     </div>
+</div>
 
 <script>
     const firebaseConfig = {
@@ -88,207 +155,262 @@
     const db = firebase.database();
 
     const horseLibrary = [
-        { id: 0, trait: "薪水小偷", stats: {spd: 60, sta: 95, burst: 40, lck: 70} },
-        { id: 1, trait: "下班戰神", stats: {spd: 50, sta: 65, burst: 95, lck: 60} },
-        { id: 2, trait: "爆肝王", stats: {spd: 95, sta: 25, burst: 80, lck: 30} },
-        { id: 3, trait: "會議發言機", stats: {spd: 75, sta: 60, burst: 60, lck: 80} },
-        { id: 4, trait: "咖啡中毒者", stats: {spd: 80, sta: 45, burst: 75, lck: 50} },
-        { id: 5, trait: "甩鍋專業戶", stats: {spd: 45, sta: 85, burst: 30, lck: 99} },
-        { id: 6, trait: "加班邊緣人", stats: {spd: 55, sta: 90, burst: 50, lck: 60} },
-        { id: 7, trait: "截稿衝刺", stats: {spd: 35, sta: 70, burst: 99, lck: 40} },
-        { id: 8, trait: "出一張嘴", stats: {spd: 85, sta: 50, burst: 70, lck: 60} },
-        { id: 9, trait: "中庸之道", stats: {spd: 70, sta: 75, burst: 65, lck: 70} }
+        { id: 0, trait: "薪水小偷", stats: {spd: 60, sta: 95, burst: 40, lck: 70}, desc: "擅長在主管視線外緩步前進，體力深不可測。" },
+        { id: 1, trait: "下班戰神", stats: {spd: 55, sta: 65, burst: 95, lck: 60}, desc: "一旦夕陽西下，體力再低也能爆發衝刺。" },
+        { id: 2, trait: "爆肝王", stats: {spd: 95, sta: 25, burst: 85, lck: 30}, desc: "起步瞬間即巔峰，但爆肝倒數是他的日常。" },
+        { id: 3, trait: "會議發言機", stats: {spd: 75, sta: 60, burst: 60, lck: 80}, desc: "節奏感極強，以穩定的高語速壓制全場。" },
+        { id: 4, trait: "咖啡中毒者", stats: {spd: 80, sta: 45, burst: 75, lck: 55}, desc: "依賴咖啡因提速，沒咖啡時體力掉超快。" },
+        { id: 5, trait: "甩鍋專業戶", stats: {spd: 45, sta: 85, burst: 30, lck: 99}, desc: "擁有神級閃避，幾乎不會滑倒，運氣點滿。" },
+        { id: 6, trait: "加班邊緣人", stats: {spd: 55, sta: 90, burst: 50, lck: 65}, desc: "雖然沒存在感，但體力驚人且跑得異常穩。" },
+        { id: 7, trait: "截稿衝刺", stats: {spd: 40, sta: 70, burst: 99, lck: 40}, desc: "平時都在混，最後關頭衝刺力量無人能及。" },
+        { id: 8, trait: "出一張嘴", stats: {spd: 85, sta: 50, burst: 70, lck: 65}, desc: "用氣勢驅動四肢，爆發力與速度兼具的型男。" },
+        { id: 9, trait: "中庸之道", stats: {spd: 70, sta: 75, burst: 65, lck: 70}, desc: "不求最快，但體力與運氣讓他始終在第一梯隊。" }
     ];
 
-    let names = ["JULIA", "MOLLY", "DON", "豪哥", "Gimme", "Erick", "韋志", "JULI", "JASON", "KRIS"];
-    let myName = localStorage.getItem('my_race_name') || "";
+    const names = ["JULIA", "MOLLY", "DON", "豪哥", "Gimme", "Erick", "韋志", "JULI", "JASON", "KRIS"];
+    let myName = localStorage.getItem('race_user') || "";
     const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
-    let raceStarted = false;
+    let serverOffset = 0;
+
+    db.ref(".info/serverTimeOffset").on("value", s => serverOffset = s.val());
 
     function init() {
         if (isAdmin) {
-            document.getElementById('admin-toolbar').style.display = 'block';
-            document.getElementById('start-btn').style.display = 'block';
+            document.getElementById('admin-ctrl').style.display = 'flex';
+            document.getElementById('lb-reset-btn').style.display = 'block';
+            document.getElementById('lb-wait-msg').style.display = 'none';
         }
-        
-        const nameGrid = document.getElementById('name-grid');
+
+        const loginGrid = document.getElementById('login-grid');
         names.forEach(n => {
-            const btn = document.createElement('button');
-            btn.className = 'name-btn';
-            btn.id = `btn-${n}`;
-            btn.innerText = n;
-            btn.onclick = () => { myName = n; localStorage.setItem('my_race_name', n); db.ref(`users/${n}`).set(true); };
-            nameGrid.appendChild(btn);
+            const d = document.createElement('div');
+            d.className = 'name-card';
+            d.id = `user-${n}`;
+            d.innerText = n;
+            d.onclick = () => { myName = n; localStorage.setItem('race_user', n); db.ref(`users/${n}`).set(true); document.getElementById('bgm').play(); };
+            loginGrid.appendChild(d);
         });
 
-        const selectGrid = document.getElementById('select-grid');
+        const setupGrid = document.getElementById('horse-selection-list');
         horseLibrary.forEach((h, i) => {
-            const div = document.createElement('div');
-            div.className = 'horse-slot';
-            div.id = `slot-${i}`;
-            div.innerHTML = `<b style="color:var(--gold)">${h.trait}</b><br><span style="font-size:20px; transform:scaleX(-1)">🐎</span>`;
-            div.onclick = () => { if(myName) db.ref(`assignments/${myName}`).set(i); };
-            selectGrid.appendChild(div);
+            const d = document.createElement('div');
+            d.className = 'horse-card';
+            d.id = `slot-${i}`;
+            d.innerHTML = `
+                <div style="font-weight:bold; color:var(--gold); font-size:18px;">${h.trait}</div>
+                <div class="stat-grid">
+                    ${renderStat("SPD", h.stats.spd)} ${renderStat("STA", h.stats.sta)}
+                    ${renderStat("BST", h.stats.burst)} ${renderStat("LCK", h.stats.lck)}
+                </div>
+                <div class="horse-desc">${h.desc}</div>
+            `;
+            d.onclick = () => { if(myName) db.ref(`assignments/${myName}`).set(i); };
+            setupGrid.appendChild(d);
         });
 
         listenFirebase();
     }
 
-    function backToLogin() {
+    function renderStat(label, val) {
+        return `<div><div class="stat-label">${label}</div><div class="stat-bar"><div class="stat-fill" style="width:${val}%"></div></div></div>`;
+    }
+
+    function logout() {
         if(myName) { db.ref(`users/${myName}`).remove(); db.ref(`assignments/${myName}`).remove(); }
-        myName = ""; localStorage.removeItem('my_race_name');
-        document.getElementById('setup').style.display = 'none';
-        document.getElementById('user-login').style.display = 'block';
+        localStorage.removeItem('race_user');
+        location.reload();
     }
 
     function listenFirebase() {
         db.ref('users').on('value', snap => {
-            const val = snap.val() || {};
-            names.forEach(n => document.getElementById(`btn-${n}`).className = `name-btn ${val[n] ? 'taken' : ''}`);
-            if (myName && val[myName]) {
-                document.getElementById('user-login').style.display = 'none';
-                document.getElementById('setup').style.display = 'block';
-                document.getElementById('my-name-display').innerText = myName;
+            const u = snap.val() || {};
+            names.forEach(n => {
+                const el = document.getElementById(`user-${n}`);
+                u[n] ? el.classList.add('taken') : el.classList.remove('taken');
+            });
+            if (myName && u[myName]) {
+                switchPage('page-setup');
+                document.getElementById('label-user-name').innerText = myName;
+            } else {
+                switchPage('page-login');
             }
         });
 
         db.ref('assignments').on('value', snap => {
-            const val = snap.val() || {};
+            const a = snap.val() || {};
             horseLibrary.forEach((_, i) => {
-                const slot = document.getElementById(`slot-${i}`);
-                slot.classList.remove('occupied', 'my-pick');
-                const owner = Object.keys(val).find(k => val[k] === i);
-                if (owner) {
-                    if (owner === myName) slot.classList.add('my-pick');
-                    else {
-                        slot.classList.add('occupied');
-                        const l = document.createElement('div'); l.className='occupied-label'; l.innerText=owner;
-                        slot.appendChild(l);
-                    }
-                }
+                const el = document.getElementById(`slot-${i}`);
+                if(!el) return;
+                const owner = Object.keys(a).find(k => a[k] === i);
+                el.className = 'horse-card';
+                if (owner === myName) el.classList.add('selected');
+                else if (owner) el.classList.add('occupied');
             });
         });
 
         db.ref('gameState').on('value', snap => {
-            const state = snap.val();
-            if (state && state.status === 'racing' && !raceStarted) startRaceEngine(state);
-            else if (!state && raceStarted) location.reload();
+            const s = snap.val();
+            if (s && s.status === 'racing') runRace(s);
+            if (s && s.status === 'idle' && document.getElementById('page-track').classList.contains('active')) location.reload();
         });
     }
 
-    function startRaceEngine(state) {
-        raceStarted = true;
-        document.getElementById('setup').style.display = 'none';
-        document.getElementById('start-btn').style.display = 'none';
-        document.getElementById('track').style.display = 'block';
+    function switchPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById('header').style.display = (id === 'page-track') ? 'none' : 'flex';
+    }
 
-        const lanesBox = document.getElementById('lanes-box');
-        const participants = Object.keys(state.participants).map(name => ({
-            name, horse: horseLibrary[state.participants[name]]
+    function adminStart() {
+        db.ref('assignments').once('value', snap => {
+            const players = snap.val();
+            if (!players) return alert("還沒人選馬！");
+            const raceData = {};
+            Object.entries(players).forEach(([name, hIdx]) => {
+                const h = horseLibrary[hIdx];
+                const events = [];
+                for(let j=0; j<3; j++) {
+                    const t = 8 + (j * 8) + Math.random() * 5;
+                    events.push({ t, type: (Math.random()*100 < h.stats.lck) ? 'burst' : 'slip' });
+                }
+                raceData[name] = { hIdx, events };
+            });
+            db.ref('gameState').set({ status: 'racing', startTime: Date.now() + serverOffset + 3000, raceData });
+        });
+    }
+
+    function adminReset() { db.ref().set({ gameState: { status: 'idle' } }); }
+
+    function runRace(state) {
+        switchPage('page-track');
+        const renderArea = document.getElementById('lanes-render-area');
+        renderArea.innerHTML = "";
+        
+        const players = Object.entries(state.raceData);
+        const laneH = 100 / Math.max(players.length, 5);
+        
+        players.forEach(([name, data], idx) => {
+            const div = document.createElement('div');
+            div.className = 'lane'; div.style.height = `${laneH}%`;
+            div.innerHTML = `
+                <div class="horse-pawn" id="pawn-${idx}">
+                    <div id="bubble-${idx}"></div>
+                    <div class="horse-visual" id="vis-${idx}">🐎</div>
+                    <div style="margin-left:10px;">
+                        <div style="font-size:10px; font-weight:bold;">${name}</div>
+                        <div class="stamina-container"><div class="stamina-fill" id="stam-${idx}" style="width:100%"></div></div>
+                    </div>
+                </div>
+            `;
+            renderArea.appendChild(div);
+        });
+
+        const finishLineX = renderArea.offsetWidth - 140;
+        const runners = players.map(([name, data]) => ({
+            name, stats: horseLibrary[data.hIdx].stats, events: data.events,
+            progress: 0, stamina: 100, isRecovering: false, recoveryStep: 0, recoveryEndTime: 0, finished: false
         }));
 
-        const laneH = 100 / participants.length;
-        participants.forEach((p, i) => {
-            const lane = document.createElement('div');
-            lane.className = 'lane';
-            lane.style.height = `${laneH}%`;
-            lane.innerHTML = `
-                <div class="horse-container" id="horse-${i}">
-                    <div class="status-bubble" id="bubble-${i}"></div>
-                    <div class="horse-icon">🐎</div>
-                    <div style="font-size:10px;">${p.name}</div>
-                </div>`;
-            lanesBox.appendChild(lane);
-        });
+        let lastT = Date.now() + serverOffset;
 
-        // --- 核心絕對同步運算 ---
-        const totalVirtualLength = 10000; // 虛擬長度
-        const frameTime = 50; // 固定每 50ms 一幀
-        const screenTrackWidth = document.getElementById('track').offsetWidth - 100;
+        function frame() {
+            const now = Date.now() + serverOffset;
+            const dt = (now - lastT) / 1000; lastT = now;
+            const elapsed = (now - state.startTime) / 1000;
+            if (elapsed < 0) { requestAnimationFrame(frame); return; }
 
-        const timer = setInterval(() => {
-            const now = Date.now();
-            const elapsed = now - state.startTime;
-            if (elapsed < 0) return;
+            runners.forEach((r, i) => {
+                if (r.finished) return;
+                const vis = document.getElementById(`vis-${i}`);
+                const bub = document.getElementById(`bubble-${i}`);
+                const stamFill = document.getElementById(`stam-${i}`);
 
-            const targetFrame = Math.floor(elapsed / frameTime);
-            const finishedList = [];
-
-            participants.forEach((p, i) => {
-                // 使用固定 Seed 重建該馬匹的歷史進程
-                let seedVal = state.seed + i;
-                function syncRand() { seedVal = (seedVal * 9301 + 49297) % 233280; return seedVal / 233280; }
-
-                let vPos = 0; let vSpeed = 0; let vStamina = 100; let isStalled = false; let stallTimer = 0;
-
-                // 從第 0 幀模擬到當前目標幀 (固定步長模擬)
-                for (let f = 0; f <= targetFrame; f++) {
-                    if (vPos >= totalVirtualLength) break;
-
-                    if (isStalled) {
-                        stallTimer--;
-                        if (stallTimer <= 0) isStalled = false;
+                if (r.isRecovering) {
+                    vis.classList.add('recovering');
+                    const left = Math.ceil(r.recoveryEndTime - elapsed);
+                    // 雙對話框邏輯
+                    if (elapsed < r.recoveryEndTime - 4) {
+                        bub.className = "speech-bubble bubble-danger";
+                        bub.innerText = "😵 已爆肝！";
                     } else {
-                        vStamina -= (vSpeed * 0.05 + 0.1);
-                        if (vStamina <= 0) { isStalled = true; stallTimer = 40; vStamina = 100; vSpeed = 0; }
-                        
-                        let accel = syncRand() * 0.5 + (p.horse.stats.spd * 0.01);
-                        // 截稿衝刺邏輯
-                        if (f > 400 && p.horse.id === 7) accel += 2.0;
-
-                        vSpeed = (vSpeed * 0.95) + accel;
-                        
-                        // 隨機事件 (滑倒/躺平)
-                        if (f % 60 === 0 && syncRand() < 0.05) { vSpeed = 0; isStalled = true; stallTimer = 20; }
+                        bub.className = "speech-bubble";
+                        bub.innerText = `🩹 回血中...${left}s`;
                     }
-                    vPos += vSpeed;
+                    if (elapsed >= r.recoveryEndTime) {
+                        r.isRecovering = false; r.stamina = 100;
+                        bub.innerText = ""; bub.className = ""; vis.classList.remove('recovering');
+                    }
+                } else {
+                    let spd = (r.stats.spd / 100) * 0.035;
+                    let drain = (1.5 - r.stats.sta/100) * 2.5;
+                    let eventActive = false;
+
+                    r.events.forEach(ev => {
+                        if (elapsed >= ev.t && elapsed <= ev.t + 1.5) {
+                            eventActive = true;
+                            if (ev.type === 'burst') {
+                                spd *= (1.5 + r.stats.burst/100); drain *= 5;
+                                bub.className = "speech-bubble"; bub.innerText = "🔥 衝刺！";
+                                vis.classList.add('sprinting');
+                            } else {
+                                r.progress = Math.max(0, r.progress - 0.012 * dt);
+                                bub.className = "speech-bubble bubble-danger"; bub.innerText = "⛸️ 滑倒！";
+                                vis.classList.remove('sprinting');
+                            }
+                        }
+                    });
+
+                    if (!eventActive) { bub.innerText = ""; bub.className = ""; vis.classList.remove('sprinting'); }
+                    
+                    r.progress += spd * dt;
+                    r.stamina = Math.max(0, r.stamina - drain * dt);
+                    stamFill.style.width = r.stamina + "%";
+                    stamFill.style.background = r.stamina < 20 ? 'var(--danger)' : 'var(--success)';
+
+                    if (r.stamina <= 0) {
+                        r.isRecovering = true;
+                        r.recoveryEndTime = elapsed + 5;
+                    }
                 }
-
-                // 更新畫面
-                const el = document.getElementById(`horse-${i}`);
-                const bubble = document.getElementById(`bubble-${i}`);
-                const screenX = (vPos / totalVirtualLength) * screenTrackWidth;
-                el.style.left = Math.min(screenX, screenTrackWidth + 50) + 'px';
-
-                if (isStalled) { bubble.style.display = 'block'; bubble.innerText = "🤮 爆肝/躺平"; bubble.style.background = "red"; }
-                else { bubble.style.display = 'none'; }
-
-                if (vPos >= totalVirtualLength) finishedList.push({ name: p.name, time: targetFrame });
+                document.getElementById(`pawn-${i}`).style.left = (r.progress * finishLineX) + "px";
+                if (r.progress >= 1) { r.finished = true; r.finishTime = elapsed; }
             });
 
-            if (finishedList.length === participants.length) {
-                clearInterval(timer);
-                showLeaderboard(finishedList);
+            if (runners.every(r => r.finished)) {
+                setTimeout(() => finishGame(runners), 1000);
+            } else {
+                requestAnimationFrame(frame);
             }
-        }, frameTime);
+        }
+        requestAnimationFrame(frame);
     }
 
-    function showLeaderboard(results) {
-        results.sort((a, b) => a.time - b.time);
-        const list = document.getElementById('leaderboard-list');
-        list.innerHTML = '';
-        results.forEach((r, i) => {
-            list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">
+    function finishGame(results) {
+        const sorted = [...results].sort((a,b) => a.finishTime - b.finishTime);
+        const emojis = ["🥳", "😎", "😊", "😐", "😐", "😓", "😓", "😭", "😭", "💀"];
+        
+        // 顯示馬匹上的表情泡泡
+        sorted.forEach((r, rank) => {
+            const idx = results.findIndex(x => x.name === r.name);
+            const bub = document.getElementById(`bubble-${idx}`);
+            bub.className = "finish-emoji";
+            bub.innerText = emojis[rank] || "💀";
+        });
+
+        document.getElementById('leaderboard-overlay').style.display = 'flex';
+        document.getElementById('rankings-list').innerHTML = sorted.map((r, i) => `
+            <div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #eee;">
                 <span>#${i+1} ${r.name}</span>
-                <span style="font-weight:bold; color:red;">${i===0?'$2500':(i<5?'$1000':'$100')}</span>
-            </div>`;
-        });
-        document.getElementById('leaderboard').style.display = 'block';
+                <span style="color:var(--primary)">${getPrize(i+1)}</span>
+            </div>
+        `).join('');
     }
 
-    function triggerStart() {
-        db.ref('assignments').once('value', snap => {
-            if(!snap.exists()) return alert("沒人選馬！");
-            db.ref('gameState').set({
-                status: 'racing',
-                startTime: Date.now() + 2000,
-                seed: Math.random(),
-                participants: snap.val()
-            });
-        });
+    function getPrize(r) {
+        if (r === 1) return "$2500";
+        if (r <= 5) return "$1000禮券";
+        return {6:"$500", 7:"$400", 8:"$300", 9:"$200", 10:"$100"}[r] || "-";
     }
-
-    function resetData() { if(confirm("確定重置？")) db.ref().set(null); }
 
     init();
 </script>
