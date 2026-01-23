@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 AIOT 尾牙賽馬 - PO 同步優化版</title>
+    <title>2026 AIOT 馬年賽馬大會</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
@@ -119,8 +119,8 @@
         <div id="admin-status-grid"></div>
     </div>
     <div style="text-align:center; padding:20px 0;">
-        <h1 style="color:var(--gold); margin:0; letter-spacing:4px;">AIOT RACE 2026</h1>
-        <p style="color:#666;">點擊你的名字登入</p>
+        <h1 style="color:var(--gold); margin:0; letter-spacing:4px;">AIOT 2026 馬年賽馬獎金賽</h1>
+        <p style="color:#666;">點擊你的名字加入比賽</p>
     </div>
     <div class="login-grid" id="login-grid"></div>
 </div>
@@ -143,7 +143,7 @@
 
 <div id="leaderboard-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; display:none; align-items:center; justify-content:center;">
     <div style="background:white; color:black; width:85%; border-radius:20px; padding:30px; text-align:center;">
-        <h2 style="color:var(--danger);">🏆 FINAL STANDINGS</h2>
+        <h2 style="color:var(--danger);">🏆 排行榜 </h2>
         <div id="rankings-list" style="margin:20px 0; font-weight:bold; text-align: left;"></div>
         <button class="btn-ui" onclick="adminReset()" style="background:#111; color:white; width:100%; padding:15px; display:none;" id="lb-reset-btn">下一輪比賽</button>
     </div>
@@ -167,21 +167,21 @@
         { id: 0, trait: "薪水小偷", stats: {spd: 60, sta: 95, burst: 40, lck: 70}, desc: "擅長在主管視線外緩步前進，體力深不可測。" },
         { id: 1, trait: "下班戰神", stats: {spd: 55, sta: 65, burst: 95, lck: 60}, desc: "一旦夕陽西下，體力再低也能爆發衝刺。" },
         { id: 2, trait: "爆肝王", stats: {spd: 95, sta: 25, burst: 85, lck: 30}, desc: "起步瞬間即巔峰，但爆肝倒數是他的日常。" },
-        { id: 3, trait: "會議發言機", stats: {spd: 75, sta: 60, burst: 60, lck: 80}, desc: "節奏感極強，以穩定的高語速壓制全場。" },
+        { id: 3, trait: "會議戰鬥機", stats: {spd: 75, sta: 60, burst: 60, lck: 80}, desc: "節奏感極強，以穩定的高語速壓制全場。" },
         { id: 4, trait: "咖啡中毒者", stats: {spd: 80, sta: 45, burst: 75, lck: 55}, desc: "依賴咖啡因提速，沒咖啡時體力掉超快。" },
         { id: 5, trait: "甩鍋專業戶", stats: {spd: 45, sta: 85, burst: 30, lck: 99}, desc: "擁有神級閃避，幾乎不會滑倒，運氣點滿。" },
         { id: 6, trait: "加班邊緣人", stats: {spd: 55, sta: 90, burst: 50, lck: 65}, desc: "雖然沒存在感，但體力驚人且跑得異常穩。" },
         { id: 7, trait: "截稿衝刺", stats: {spd: 40, sta: 70, burst: 99, lck: 40}, desc: "平時都在混，最後關頭衝刺力量無人能及。" },
-        { id: 8, trait: "出一張嘴", stats: {spd: 85, sta: 50, burst: 70, lck: 65}, desc: "用氣勢驅動四肢，爆發力與速度兼具的型男。" },
+        { id: 8, trait: "用嘴做事", stats: {spd: 85, sta: 50, burst: 70, lck: 65}, desc: "用氣勢驅動四肢，爆發力與速度兼具的型男。" },
         { id: 9, trait: "中庸之道", stats: {spd: 70, sta: 75, burst: 65, lck: 70}, desc: "不求最快，但體力與運氣讓他始終在第一梯隊。" },
-        { id: 10, trait: "PM 通靈師", stats: {spd: 50, sta: 50, burst: 40, lck: 100}, desc: "能預知 Bug 發生位置，靠著神級直覺避開障礙。" },
+        { id: 10, trait: "通靈王", stats: {spd: 50, sta: 50, burst: 40, lck: 100}, desc: "能預知需求，靠著神級直覺避開所有障礙。" },
         { id: 11, trait: "簡報大師", stats: {spd: 90, sta: 30, burst: 90, lck: 40}, desc: "畫面很華麗，但續航力極低，沒講完就斷電。" },
-        { id: 12, trait: "Debug 錦鯉", stats: {spd: 65, sta: 65, burst: 65, lck: 95}, desc: "只要他在，程式碼自動修復，運氣就是一切。" },
-        { id: 13, trait: "飲水機守門員", stats: {spd: 40, sta: 100, burst: 20, lck: 80}, desc: "每天準時報到，體力全場最硬，慢慢磨到終點。" },
-        { id: 14, trait: "Slack 潛水員", stats: {spd: 75, sta: 75, burst: 50, lck: 50}, desc: "沒事不回訊，一旦回訊就是已經到終點了。" }
+        { id: 12, trait: "Debug王", stats: {spd: 65, sta: 65, burst: 65, lck: 95}, desc: "只要他在，程式碼自動修復，怎麼修的?不知道，運氣就是一切。" },
+        { id: 13, trait: "茶水間守門員", stats: {spd: 40, sta: 100, burst: 20, lck: 80}, desc: "每天準時報到，體力全場最硬，慢慢磨到終點。" },
+        { id: 14, trait: "Teasm 潛水員", stats: {spd: 75, sta: 75, burst: 50, lck: 50}, desc: "沒事不回訊，一旦回訊息就是一鳴驚人。" }
     ];
 
-    const names = ["JULIA", "MOLLY", "DON", "豪哥", "Gimme", "Erick", "韋志", "JULI", "JASON", "KRIS"];
+    const names = ["Julia", "Molly", "DON", "豪哥", "Gimme", "Erick", "韋志", "Juli", "Jason", "Kris"];
     let myName = localStorage.getItem('race_user') || "";
     const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
     let serverOffset = 0;
@@ -344,8 +344,8 @@
                 if (r.isRecovering) {
                     vis.classList.add('effect-exhausted');
                     const rem = r.recoveryEndTime - elapsed;
-                    if (rem > 3.5) { bub.className = "speech-bubble bubble-danger"; bub.innerText = "😵 爆肝中..."; }
-                    else { bub.className = "speech-bubble bubble-recover"; bub.innerText = `🩹 回血中 ${Math.ceil(rem)}s`; }
+                    if (rem > 3.5) { bub.className = "speech-bubble bubble-danger"; bub.innerText = "😵 已爆肝..."; }
+                    else { bub.className = "speech-bubble bubble-recover"; bub.innerText = `🩹 躺平中 ${Math.ceil(rem)}s`; }
                     if (elapsed >= r.recoveryEndTime) { r.isRecovering = false; r.stamina = 100; bub.innerText = ""; bub.className = ""; }
                 } else {
                     let spd = (r.stats.spd / 100) * 0.035; let drain = (1.5 - r.stats.sta/100) * 2.5; let eventActive = false;
@@ -382,3 +382,4 @@
 </script>
 </body>
 </html>
+
