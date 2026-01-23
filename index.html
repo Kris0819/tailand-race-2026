@@ -126,6 +126,16 @@
 </div>
 
 <div id="page-setup" class="page">
+    <div style="text-align:center; padding: 25px 15px 10px;">
+        <h2 style="color:var(--gold); margin:0; font-size:24px;">🐎 請選擇您的參賽馬匹</h2>
+        <div style="font-size:12px; color:#aaa; margin-top:12px; line-height:1.6; background:#1a1a1a; padding:12px; border-radius:10px; text-align:left; border:1px solid #333;">
+            <b style="color:var(--gold);">📊 屬性影響說明：</b><br>
+            • <b>速度：</b>基礎移動速度。速度越快，體力消耗也越快。<br>
+            • <b>體力：</b>影響續航力。數值越高，越不容易進入「爆肝」躺平狀態。<br>
+            • <b>爆發：</b>衝刺時的增益強度。數值越高，觸發衝刺時噴發越遠。<br>
+            • <b>運氣：</b>數值越高，越不容易發生滑倒意外，且觸發衝刺機率越高。
+        </div>
+    </div>
     <div class="horse-list" id="horse-selection-list"></div>
 </div>
 
@@ -215,8 +225,8 @@
                     <div style="font-weight:bold; color:var(--gold); font-size:18px;">${h.trait}</div>
                 </div>
                 <div class="stat-grid">
-                    ${renderStat("SPD", h.stats.spd)} ${renderStat("STA", h.stats.sta)}
-                    ${renderStat("BST", h.stats.burst)} ${renderStat("LCK", h.stats.lck)}
+                    ${renderStat("速度", h.stats.spd)} ${renderStat("體力", h.stats.sta)}
+                    ${renderStat("爆發", h.stats.burst)} ${renderStat("運氣", h.stats.lck)}
                 </div>
                 <div class="horse-desc">${h.desc}</div>
             `;
@@ -259,13 +269,14 @@
         db.ref('gameState').on('value', snap => {
             const s = snap.val();
             if (s && s.status === 'racing') {
-                // 管理員介面切換：隱藏開始，只留重置
                 if(isAdmin) document.getElementById('admin-start-btn').style.display = 'none';
                 runRace(s);
             } else {
                 if(isAdmin) document.getElementById('admin-start-btn').style.display = 'block';
                 document.getElementById('leaderboard-overlay').style.display = 'none';
-                if (document.getElementById('page-track').classList.contains('active')) location.reload();
+                if (document.getElementById('page-track').classList.contains('active')) {
+                    setTimeout(() => { if (!s || s.status !== 'racing') location.reload(); }, 500);
+                }
             }
         });
     }
@@ -292,7 +303,6 @@
                 for(let j=0; j<3; j++) events.push({ t: 8 + (j * 8) + Math.random() * 5, type: (Math.random()*100 < h.stats.lck) ? 'burst' : 'slip' });
                 raceData[name] = { hIdx, events };
             });
-            // 寫入 startTime 同步所有玩家
             db.ref('gameState').set({ status: 'racing', startTime: Date.now() + serverOffset + 4000, raceData });
         });
     }
@@ -382,4 +392,3 @@
 </script>
 </body>
 </html>
-
