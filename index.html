@@ -53,7 +53,7 @@
 
         /* 3. 比賽畫面 (遊戲化) */
         #page-track { background: #111; overflow: hidden; }
-        .track-bg { flex-grow: 1; position: relative; background: #151515; }
+        .track-bg { flex-grow: 1; position: relative; background: #151515; padding-top: 60px; /* 增加頂部空間 */ }
         .lane { position: relative; border-bottom: 1px solid #252525; height: 18%; display: flex; align-items: center; }
         
         .finish-line { 
@@ -83,7 +83,7 @@
         .bubble-danger { background: var(--danger); color: white; }
         .bubble-danger::after { border-color: var(--danger) transparent; }
         
-        .finish-emoji { font-size: 30px; position: absolute; top: -40px; left: 20px; animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .finish-emoji { font-size: 30px; position: absolute; top: -40px; left: 20px; animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 30; }
         @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
 
         /* Stamina Bar */
@@ -100,7 +100,7 @@
 <audio id="bgm" loop src="https://assets.mixkit.co/music/preview/mixkit-fast-game-action-loop-460.mp3"></audio>
 
 <div class="header-bar" id="header">
-    <button class="btn-ui" id="btn-back-to-login" onclick="logout()" style="background:#444; color:white; padding:5px 15px;">⬅ 返回選人</button>
+    <div style="flex-grow:1;"></div>
     <div id="header-user-info" style="text-align:right;">
         <div style="font-size:10px; color:#888;">PLAYER</div>
         <div id="label-user-name" style="font-weight:bold; color:var(--gold);">GUEST</div>
@@ -117,6 +117,9 @@
 
 <div id="page-setup" class="page">
     <div class="horse-list" id="horse-selection-list"></div>
+    <div style="padding: 20px; text-align: center;">
+        <button class="btn-ui" onclick="logout()" style="background:#444; color:white; padding:10px 20px;">⬅ 返回選人</button>
+    </div>
 </div>
 
 <div id="page-track" class="page">
@@ -328,7 +331,6 @@
                 if (r.isRecovering) {
                     vis.classList.add('recovering');
                     const left = Math.ceil(r.recoveryEndTime - elapsed);
-                    // 雙對話框邏輯
                     if (elapsed < r.recoveryEndTime - 4) {
                         bub.className = "speech-bubble bubble-danger";
                         bub.innerText = "😵 已爆肝！";
@@ -373,7 +375,14 @@
                     }
                 }
                 document.getElementById(`pawn-${i}`).style.left = (r.progress * finishLineX) + "px";
-                if (r.progress >= 1) { r.finished = true; r.finishTime = elapsed; }
+                
+                // 抵達終點立即顯示表情
+                if (r.progress >= 1) { 
+                    r.finished = true; 
+                    r.finishTime = elapsed;
+                    bub.className = "finish-emoji";
+                    bub.innerText = "😎"; // 暫時統一為這個表情，結果出來後會更新
+                }
             });
 
             if (runners.every(r => r.finished)) {
