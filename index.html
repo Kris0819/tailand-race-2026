@@ -387,9 +387,10 @@
         document.getElementById('rankings-list').innerHTML = sorted.map((r, i) => `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #eee;"><span>${rankEmojis[i] || ""} #${i+1} ${r.name}</span><span style="color:var(--primary)">${getPrize(i+1)}</span></div>`).join('');
     }
 
-    function getPrize(r) { return r === 1 ? "現金 $2500" : (r <= 5 ? "$1000禮券" : {6:"現金 $500", 7:"現金 $400", 8:"現金 $300", 9:"現金 $200", 10:"現金 $100"}[r] || "-"); }
+    function getPrize(r) { return r === 1 ? "現金 $2500" : (r <= 5 ? "新光禮卷 $1000 " : {6:"現金 $500", 7:"現金 $400", 8:"現金 $300", 9:"現金 $200", 10:"現金 $100"}[r] || "-"); }
     init();
 </script>
 </body>
 </html>
+
 
