@@ -37,7 +37,7 @@
             padding: 0; 
             height: 100vh; 
             overflow: hidden;
-            font-size: 8px;
+            font-size: 11px;
         }
 
         /* 像素邊框效果 */
@@ -64,11 +64,11 @@
         .btn-ui { 
             font-family: 'Press Start 2P', monospace;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 24px;
             cursor: pointer;
             transition: none;
             position: relative;
-            font-size: 8px;
+            font-size: 11px;
             text-transform: uppercase;
             background: var(--pixel-gold);
             color: var(--pixel-dark);
@@ -162,9 +162,9 @@
                     #6b3410 50%,
                     var(--pixel-brown) 100%
                 );
-            padding: 25px 10px;
+            padding: 30px 15px;
             text-align: center; 
-            font-size: 10px;
+            font-size: 14px;
             font-weight: 400;
             color: var(--pixel-gold);
             position: relative;
@@ -293,8 +293,8 @@
             right: 10px;
             background: var(--pixel-red);
             color: white;
-            padding: 4px 12px;
-            font-size: 7px;
+            padding: 5px 14px;
+            font-size: 9px;
             font-weight: bold;
             z-index: 2;
             box-shadow: 2px 2px 0 var(--pixel-shadow);
@@ -309,7 +309,7 @@
         }
         
         .stat-label { 
-            font-size: 7px;
+            font-size: 9px;
             color: var(--pixel-gold);
             margin-bottom: 4px;
             text-shadow: 1px 1px 0 var(--pixel-shadow);
@@ -346,7 +346,7 @@
         }
         
         .horse-desc { 
-            font-size: 7px;
+            font-size: 9px;
             color: #ccc;
             line-height: 1.6;
             border-top: 2px solid var(--pixel-brown);
@@ -410,7 +410,6 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            padding-top: 15%;
         }
         
         .lane { 
@@ -449,7 +448,7 @@
         .finish-line { 
             position: absolute;
             right: 0;
-            top: 15%;
+            top: 0;
             bottom: 0;
             width: 50px;
             background: 
@@ -468,7 +467,7 @@
         .finish-line::before {
             content: '🏁';
             position: absolute;
-            top: -30px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 24px;
@@ -549,8 +548,8 @@
             left: 10px;
             background: var(--pixel-white);
             color: var(--pixel-dark);
-            padding: 6px 14px;
-            font-size: 8px;
+            padding: 8px 16px;
+            font-size: 11px;
             font-weight: bold;
             box-shadow: 
                 3px 3px 0 var(--pixel-shadow),
@@ -674,8 +673,8 @@
         
         .player-status-tag { 
             display: inline-block;
-            padding: 5px 12px;
-            font-size: 7px;
+            padding: 6px 14px;
+            font-size: 9px;
             margin: 4px;
             background: var(--pixel-dark);
             border: 2px solid var(--pixel-brown);
@@ -741,7 +740,7 @@
 
         #leaderboard-overlay h2 {
             color: var(--pixel-red);
-            font-size: 16px;
+            font-size: 18px;
             margin: 0 0 20px 0;
             text-shadow: 2px 2px 0 var(--pixel-shadow);
             animation: title-bounce 0.5s steps(3) infinite;
@@ -754,7 +753,7 @@
 
         #rankings-list {
             margin: 20px 0;
-            font-size: 9px;
+            font-size: 11px;
             text-align: left;
         }
 
@@ -779,7 +778,7 @@
                     rgba(255, 215, 0, 0.3) 0%,
                     rgba(255, 215, 0, 0.1) 100%
                 );
-            font-size: 11px;
+            font-size: 13px;
         }
 
         #rankings-list > div:nth-child(2) {
@@ -802,7 +801,7 @@
         .pixel-title {
             position: relative;
             display: inline-block;
-            padding: 10px 20px;
+            padding: 12px 24px;
             background: var(--pixel-brown);
             color: var(--pixel-gold);
             border: 3px solid var(--pixel-gold);
@@ -810,7 +809,7 @@
                 4px 4px 0 var(--pixel-shadow),
                 inset 0 0 0 2px var(--pixel-dark);
             margin: 10px 0;
-            font-size: 12px;
+            font-size: 14px;
             letter-spacing: 2px;
             animation: title-glow 2s steps(4) infinite;
         }
@@ -837,11 +836,11 @@
                     #3a2a1a 0%,
                     #2a1a0a 100%
                 );
-            padding: 12px;
+            padding: 15px;
             border: 3px solid var(--pixel-brown);
             margin: 12px 15px;
-            font-size: 7px;
-            line-height: 1.8;
+            font-size: 9px;
+            line-height: 2;
             color: var(--pixel-white);
             box-shadow: 
                 4px 4px 0 var(--pixel-shadow),
@@ -896,7 +895,12 @@
 </head>
 <body>
 
-<audio id="bgm" loop src="https://assets.mixkit.co/music/preview/mixkit-fast-game-action-loop-460.mp3"></audio>
+<audio id="bgm" loop>
+    <source src="https://assets.mixkit.co/active_storage/sfx/2018/2018.wav" type="audio/wav">
+</audio>
+<audio id="countdown-sfx" src="https://assets.mixkit.co/active_storage/sfx/2019/2019.wav"></audio>
+<audio id="start-sfx" src="https://assets.mixkit.co/active_storage/sfx/1435/1435.wav"></audio>
+<audio id="finish-sfx" src="https://assets.mixkit.co/active_storage/sfx/1435/1435.wav"></audio>
 <div id="countdown-overlay">READY</div>
 
 <div class="header-bar" id="header">
@@ -904,13 +908,13 @@
         <button class="btn-ui" id="btn-back" onclick="logout()" style="background:var(--pixel-red); color:white; display:none;">← 返回</button>
     </div>
     <div id="header-user-info" style="text-align:right;">
-        <div id="label-user-name" style="font-size:10px; color:var(--pixel-gold); text-shadow: 2px 2px 0 var(--pixel-shadow);">GUEST</div>
+        <div id="label-user-name" style="font-size:12px; color:var(--pixel-gold); text-shadow: 2px 2px 0 var(--pixel-shadow);">GUEST</div>
     </div>
 </div>
 
 <div id="page-login" class="page active">
     <div id="admin-login-monitor" style="display:none;" class="admin-monitor-box">
-        <div style="font-size:8px; color:var(--pixel-gold); margin-bottom:8px; text-shadow: 1px 1px 0 var(--pixel-shadow);">
+        <div style="font-size:10px; color:var(--pixel-gold); margin-bottom:8px; text-shadow: 1px 1px 0 var(--pixel-shadow);">
             [ADMIN] 即時選馬進度：
         </div>
         <div id="admin-status-grid"></div>
@@ -919,7 +923,7 @@
         <h1 class="pixel-title" style="margin:20px auto; display:inline-block;">
             🐴 AIOT 2026<br>馬年賽馬獎金賽 🐴
         </h1>
-        <p style="color:var(--pixel-gold); font-size:8px; margin-top:15px;">
+        <p style="color:var(--pixel-gold); font-size:10px; margin-top:15px;">
             點擊你的名字加入比賽
         </p>
     </div>
@@ -928,12 +932,12 @@
 
 <div id="page-setup" class="page">
     <div style="text-align:center; padding: 20px 15px 10px;">
-        <h2 class="pixel-title" style="font-size:11px; margin:10px auto; display:inline-block;">
+        <h2 class="pixel-title" style="font-size:13px; margin:10px auto; display:inline-block;">
             🐎 選擇戰馬 🐎
         </h2>
     </div>
     <div class="info-box">
-        <b style="font-size:8px;">📊 屬性影響說明：</b><br><br>
+        <b style="font-size:10px;">📊 屬性影響說明：</b><br><br>
         <b>• 速度：</b>基礎移動速度。速度越快，體力消耗也越快。<br>
         <b>• 體力：</b>影響續航力。數值越高，越不容易進入「爆肝」狀態。<br>
         <b>• 爆發：</b>衝刺時的增益強度。數值越高，觸發衝刺時噴發越遠。<br>
@@ -953,10 +957,10 @@
 </div>
 
 <div class="admin-persistent-ctrl" id="admin-ctrl">
-    <button class="btn-ui" id="admin-start-btn" onclick="adminStart()" style="background:var(--pixel-green); color:var(--pixel-dark); padding:12px 24px; font-size:9px;">
+    <button class="btn-ui" id="admin-start-btn" onclick="adminStart()" style="background:var(--pixel-green); color:var(--pixel-dark); padding:14px 28px; font-size:11px;">
         🏁 開始比賽
     </button>
-    <button class="btn-ui" id="admin-reset-btn" onclick="adminReset()" style="background:var(--pixel-red); color:white; padding:10px 20px; font-size:8px;">
+    <button class="btn-ui" id="admin-reset-btn" onclick="adminReset()" style="background:var(--pixel-red); color:white; padding:12px 24px; font-size:10px;">
         🔄 重置全場
     </button>
 </div>
@@ -1022,7 +1026,14 @@
         names.forEach(n => {
             const d = document.createElement('div');
             d.className = 'name-card'; d.id = `user-${n}`; d.innerText = n;
-            d.onclick = () => { myName = n; localStorage.setItem('race_user', n); db.ref(`users/${n}`).set(true); document.getElementById('bgm').play(); };
+            d.onclick = () => { 
+                myName = n; 
+                localStorage.setItem('race_user', n); 
+                db.ref(`users/${n}`).set(true); 
+                const bgm = document.getElementById('bgm');
+                bgm.volume = 0.3;
+                bgm.play().catch(e => console.log('音樂播放失敗', e));
+            };
             loginGrid.appendChild(d);
         });
 
@@ -1034,7 +1045,7 @@
                 <div class="owner-badge" id="owner-${i}" style="display:none;"></div>
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
                     <span style="font-size:32px;">🐎</span>
-                    <div style="font-weight:bold; color:var(--pixel-gold); font-size:10px; text-shadow: 1px 1px 0 var(--pixel-shadow);">${h.trait}</div>
+                    <div style="font-weight:bold; color:var(--pixel-gold); font-size:12px; text-shadow: 1px 1px 0 var(--pixel-shadow);">${h.trait}</div>
                 </div>
                 <div class="stat-grid">
                     ${renderStat("速度", h.stats.spd)} ${renderStat("體力", h.stats.sta)}
@@ -1143,7 +1154,7 @@
                     <div id="bubble-${idx}"></div>
                     <div class="horse-visual" id="vis-${idx}">🐎</div>
                     <div style="margin-left:10px;">
-                        <div style="font-size:8px; font-weight:bold; text-shadow: 1px 1px 0 rgba(0,0,0,0.5);">${name}</div>
+                        <div style="font-size:10px; font-weight:bold; text-shadow: 1px 1px 0 rgba(0,0,0,0.5);">${name}</div>
                         <div class="stamina-container"><div class="stamina-fill" id="stam-${idx}" style="width:100%"></div></div>
                     </div>
                 </div>
@@ -1160,8 +1171,28 @@
             if (!isRacing) return;
             const now = Date.now() + serverOffset; const dt = (now - lastT) / 1000; lastT = now; const elapsed = (now - state.startTime) / 1000;
             
-            if (elapsed < 0) { const count = Math.ceil(Math.abs(elapsed)); document.getElementById('countdown-overlay').style.display = 'flex'; document.getElementById('countdown-overlay').innerText = count > 3 ? "READY" : count; requestAnimationFrame(frame); return; }
-            document.getElementById('countdown-overlay').style.display = 'none';
+            if (elapsed < 0) { 
+                const count = Math.ceil(Math.abs(elapsed)); 
+                document.getElementById('countdown-overlay').style.display = 'flex'; 
+                const countText = count > 3 ? "READY" : count;
+                if (document.getElementById('countdown-overlay').innerText !== countText) {
+                    document.getElementById('countdown-overlay').innerText = countText;
+                    if (count <= 3 && count >= 1) {
+                        const countdownSfx = document.getElementById('countdown-sfx');
+                        countdownSfx.currentTime = 0;
+                        countdownSfx.volume = 0.4;
+                        countdownSfx.play().catch(e => console.log('倒數音效播放失敗'));
+                    }
+                }
+                requestAnimationFrame(frame); 
+                return; 
+            }
+            if (document.getElementById('countdown-overlay').style.display !== 'none') {
+                document.getElementById('countdown-overlay').style.display = 'none';
+                const startSfx = document.getElementById('start-sfx');
+                startSfx.volume = 0.5;
+                startSfx.play().catch(e => console.log('開始音效播放失敗'));
+            }
 
             runners.forEach((r, i) => {
                 if (r.finished) return;
@@ -1177,17 +1208,35 @@
                     else { bub.className = "speech-bubble bubble-recover"; bub.innerText = `🩹 躺平中 ${Math.ceil(rem)}s`; }
                     if (elapsed >= r.recoveryEndTime) { r.isRecovering = false; r.stamina = 100; bub.innerText = ""; bub.className = ""; }
                 } else {
-                    let spd = (r.stats.spd / 100) * 0.035; let drain = (1.5 - r.stats.sta/100) * 2.5; let eventActive = false;
+                    let spd = (r.stats.spd / 100) * 0.035; 
+                    let drain = (1.5 - r.stats.sta/100) * 0.8; // 降低基礎消耗速度
+                    let eventActive = false;
                     r.events.forEach(ev => {
                         if (elapsed >= ev.t && elapsed <= ev.t + 1.5) {
                             eventActive = true;
-                            if (ev.type === 'burst') { spd *= (1.5 + r.stats.burst/100); drain *= 5; bub.className = "speech-bubble"; bub.innerText = "🔥 衝刺！"; vis.classList.add('effect-sprint'); }
-                            else { r.progress = Math.max(0, r.progress - 0.012 * dt); bub.className = "speech-bubble bubble-danger"; bub.innerText = "⛸️ 滑倒！"; vis.classList.add('effect-slip'); }
+                            if (ev.type === 'burst') { 
+                                spd *= (1.5 + r.stats.burst/100); 
+                                drain *= 3; // 衝刺時體力消耗加倍
+                                bub.className = "speech-bubble"; 
+                                bub.innerText = "🔥 衝刺！"; 
+                                vis.classList.add('effect-sprint'); 
+                            }
+                            else { 
+                                r.progress = Math.max(0, r.progress - 0.012 * dt); 
+                                bub.className = "speech-bubble bubble-danger"; 
+                                bub.innerText = "⛸️ 滑倒！"; 
+                                vis.classList.add('effect-slip'); 
+                            }
                         }
                     });
                     if (!eventActive) { bub.innerText = ""; bub.className = ""; }
-                    r.progress += spd * dt; r.stamina = Math.max(0, r.stamina - drain * dt); if(stamFill) stamFill.style.width = r.stamina + "%";
-                    if (r.stamina <= 0) { r.isRecovering = true; r.recoveryEndTime = elapsed + 5; }
+                    r.progress += spd * dt; 
+                    r.stamina = Math.max(0, r.stamina - drain * dt); 
+                    if(stamFill) stamFill.style.width = r.stamina + "%";
+                    if (r.stamina <= 0 && !r.isRecovering) { 
+                        r.isRecovering = true; 
+                        r.recoveryEndTime = elapsed + 5; 
+                    }
                 }
                 const pawn = document.getElementById(`pawn-${i}`);
                 if(pawn) pawn.style.left = (r.progress * finishLineX) + "px";
