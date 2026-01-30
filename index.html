@@ -1267,14 +1267,26 @@
                 lastBroadcast = now;
                 const gameStateUpdate = {
                     elapsed: elapsed,
-                    runners: runners.map(r => ({
-                        name: r.name,
-                        progress: r.progress,
-                        stamina: r.stamina,
-                        isRecovering: r.isRecovering,
-                        finished: r.finished,
-                        finishTime: r.finishTime
-                    }))
+                    runners: runners.map((r, idx) => {
+                        // 檢查當前是否有事件觸發
+                        let currentEvent = null;
+                        r.events.forEach(ev => {
+                            if (elapsed >= ev.t && elapsed <= ev.t + 1.5) {
+                                currentEvent = ev.type;
+                            }
+                        });
+                        
+                        return {
+                            name: r.name,
+                            progress: r.progress,
+                            stamina: r.stamina,
+                            isRecovering: r.isRecovering,
+                            recoveryEndTime: r.recoveryEndTime,
+                            finished: r.finished,
+                            finishTime: r.finishTime,
+                            currentEvent: currentEvent
+                        };
+                    })
                 };
                 db.ref('gameState/live').set(gameStateUpdate);
             }
@@ -1299,12 +1311,22 @@
     // 玩家專用：接收admin廣播的狀態並顯示
     function runRaceAsPlayer(state, players, finishLineX) {
         let countdownShown = false;
+        let hasStarted = false;
         
         // 監聽admin廣播的即時狀態
-        db.ref('gameState/live').on('value', snap => {
+        const liveRef = db.ref('gameState/live');
+        liveRef.on('value', snap => {
             const liveState = snap.val();
-            if (!liveState) return;
+            if (!liveState) {
+                // 如果還沒有live數據，顯示等待中
+                if (!hasStarted) {
+                    document.getElementById('countdown-overlay').style.display = 'flex';
+                    document.getElementById('countdown-overlay').innerText = 'READY';
+                }
+                return;
+            }
 
+            hasStarted = true;
             const elapsed = liveState.elapsed;
 
             // 處理倒數計時
@@ -1317,12 +1339,14 @@
                 return;
             }
 
-            if (countdownShown && document.getElementById('countdown-overlay').style.display !== 'none') {
+            if (countdownShown || document.getElementById('countdown-overlay').style.display !== 'none') {
                 document.getElementById('countdown-overlay').style.display = 'none';
                 countdownShown = false;
             }
 
             // 更新每個runner的狀態
+            if (!liveState.runners || !Array.isArray(liveState.runners)) return;
+            
             liveState.runners.forEach((runner, i) => {
                 const pawn = document.getElementById(`pawn-${i}`);
                 const stamFill = document.getElementById(`stam-${i}`);
@@ -1339,14 +1363,34 @@
 
                 // 更新視覺效果
                 vis.className = "horse-visual";
+                
                 if (runner.finished) {
                     bub.className = "finish-emoji";
-                    const finishedCount = liveState.runners.filter(r => r.finished).indexOf(runner) + 1;
-                    bub.innerText = rankEmojis[finishedCount - 1] || "🏁";
+                    const finishedRunners = liveState.runners.filter(r => r.finished);
+                    const rank = finishedRunners.findIndex(r => r.name === runner.name);
+                    bub.innerText = rankEmojis[rank] || "🏁";
                 } else if (runner.isRecovering) {
                     vis.classList.add('effect-exhausted');
-                    bub.className = "speech-bubble bubble-danger";
-                    bub.innerText = "😵 爆肝中...";
+                    const elapsed = liveState.elapsed;
+                    const rem = runner.recoveryEndTime - elapsed;
+                    if (rem > 3.5) {
+                        bub.className = "speech-bubble bubble-danger";
+                        bub.innerText = "😵 已爆肝...";
+                    } else {
+                        bub.className = "speech-bubble bubble-recover";
+                        bub.innerText = `🩹 躺平中 ${Math.ceil(rem)}s`;
+                    }
+                } else if (runner.currentEvent) {
+                    // 顯示當前事件的特效
+                    if (runner.currentEvent === 'burst') {
+                        vis.classList.add('effect-sprint');
+                        bub.className = "speech-bubble";
+                        bub.innerText = "🔥 衝刺！";
+                    } else if (runner.currentEvent === 'slip') {
+                        vis.classList.add('effect-slip');
+                        bub.className = "speech-bubble bubble-danger";
+                        bub.innerText = "⛸️ 滑倒！";
+                    }
                 } else {
                     bub.innerText = "";
                     bub.className = "";
@@ -1355,11 +1399,13 @@
         });
 
         // 監聽最終結果
-        db.ref('gameState/finalResults').on('value', snap => {
+        const finalRef = db.ref('gameState/finalResults');
+        finalRef.on('value', snap => {
             const finalResults = snap.val();
             if (finalResults && finalResults.length > 0) {
                 // 停止監聽即時狀態
-                db.ref('gameState/live').off();
+                liveRef.off();
+                finalRef.off();
                 setTimeout(() => finishGame(finalResults), 500);
             }
         });
