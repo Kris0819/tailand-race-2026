@@ -1120,11 +1120,13 @@
 
     function runRace(state) {
         switchPage('page-track');
-        const renderArea = document.getElementById('lanes-render-area'); renderArea.innerHTML = "";
+        const renderArea = document.getElementById('lanes-render-area'); 
+        renderArea.innerHTML = "";
         const players = Object.entries(state.raceData);
         
         players.forEach(([name, data], idx) => {
-            const div = document.createElement('div'); div.className = 'lane';
+            const div = document.createElement('div'); 
+            div.className = 'lane';
             div.innerHTML = `
                 <div class="horse-pawn" id="pawn-${idx}">
                     <div id="bubble-${idx}"></div>
@@ -1139,9 +1141,33 @@
         });
 
         const finishLineX = renderArea.offsetWidth - 140;
-        const runners = players.map(([name, data]) => ({ name, stats: horseLibrary[data.hIdx].stats, events: data.events, progress: 0, stamina: 100, isRecovering: false, recoveryEndTime: 0, finished: false }));
+
+        if (isAdmin) {
+            // Admin模式：計算並廣播
+            runRaceAsAdmin(state, players, finishLineX);
+        } else {
+            // 玩家模式：接收並顯示
+            runRaceAsPlayer(state, players, finishLineX);
+        }
+    }
+
+    // Admin模式：執行計算並廣播狀態
+    function runRaceAsAdmin(state, players, finishLineX) {
+        const runners = players.map(([name, data]) => ({ 
+            name, 
+            stats: horseLibrary[data.hIdx].stats, 
+            events: data.events, 
+            progress: 0, 
+            stamina: 100, 
+            isRecovering: false, 
+            recoveryEndTime: 0, 
+            finished: false,
+            finishTime: 0
+        }));
+        
         let lastT = Date.now() + serverOffset;
         let isRacing = true;
+        let lastBroadcast = 0;
 
         function frame() {
             if (!isRacing) return;
@@ -1154,11 +1180,26 @@
                 const count = Math.ceil(Math.abs(elapsed)); 
                 document.getElementById('countdown-overlay').style.display = 'flex'; 
                 document.getElementById('countdown-overlay').innerText = count > 3 ? "READY" : count; 
+                
+                // 廣播倒數狀態
+                if (now - lastBroadcast > 200) {
+                    lastBroadcast = now;
+                    db.ref('gameState/sync').set({
+                        phase: 'countdown',
+                        count: count > 3 ? "READY" : count,
+                        timestamp: now
+                    });
+                }
+                
                 requestAnimationFrame(frame); 
                 return; 
             }
-            document.getElementById('countdown-overlay').style.display = 'none';
+            
+            if (document.getElementById('countdown-overlay').style.display !== 'none') {
+                document.getElementById('countdown-overlay').style.display = 'none';
+            }
 
+            // 計算所有runner的狀態
             runners.forEach((r, i) => {
                 if (r.finished) return;
                 const bub = document.getElementById(`bubble-${i}`);
@@ -1169,24 +1210,36 @@
                 if (r.isRecovering) {
                     vis.classList.add('effect-exhausted');
                     const rem = r.recoveryEndTime - elapsed;
-                    if (rem > 3.5) { bub.className = "speech-bubble bubble-danger"; bub.innerText = "😵 已爆肝..."; }
-                    else { bub.className = "speech-bubble bubble-recover"; bub.innerText = `🩹 躺平中 ${Math.ceil(rem)}s`; }
-                    if (elapsed >= r.recoveryEndTime) { r.isRecovering = false; r.stamina = 100; bub.innerText = ""; bub.className = ""; }
+                    if (rem > 3.5) { 
+                        bub.className = "speech-bubble bubble-danger"; 
+                        bub.innerText = "😵 已爆肝..."; 
+                    } else { 
+                        bub.className = "speech-bubble bubble-recover"; 
+                        bub.innerText = `🩹 躺平中 ${Math.ceil(rem)}s`; 
+                    }
+                    if (elapsed >= r.recoveryEndTime) { 
+                        r.isRecovering = false; 
+                        r.stamina = 100; 
+                        bub.innerText = ""; 
+                        bub.className = ""; 
+                    }
                 } else {
                     let spd = (r.stats.spd / 100) * 0.035; 
                     let drain = (1.5 - r.stats.sta/100) * 5;
                     let eventActive = false;
+                    let currentEvent = null;
+                    
                     r.events.forEach(ev => {
                         if (elapsed >= ev.t && elapsed <= ev.t + 1.5) {
                             eventActive = true;
+                            currentEvent = ev.type;
                             if (ev.type === 'burst') { 
                                 spd *= (1.5 + r.stats.burst/100); 
                                 drain *= 6;
                                 bub.className = "speech-bubble"; 
                                 bub.innerText = "🔥 衝刺！"; 
                                 vis.classList.add('effect-sprint'); 
-                            }
-                            else { 
+                            } else { 
                                 r.progress = Math.max(0, r.progress - 0.012 * dt); 
                                 bub.className = "speech-bubble bubble-danger"; 
                                 bub.innerText = "⛸️ 滑倒！"; 
@@ -1194,17 +1247,25 @@
                             }
                         }
                     });
-                    if (!eventActive) { bub.innerText = ""; bub.className = ""; }
+                    
+                    if (!eventActive) { 
+                        bub.innerText = ""; 
+                        bub.className = ""; 
+                    }
+                    
                     r.progress += spd * dt; 
                     r.stamina = Math.max(0, r.stamina - drain * dt); 
                     if(stamFill) stamFill.style.width = r.stamina + "%";
+                    
                     if (r.stamina <= 0 && !r.isRecovering) { 
                         r.isRecovering = true; 
                         r.recoveryEndTime = elapsed + 5; 
                     }
                 }
+                
                 const pawn = document.getElementById(`pawn-${i}`);
                 if(pawn) pawn.style.left = (r.progress * finishLineX) + "px";
+                
                 if (r.progress >= 1 && !r.finished) { 
                     r.finished = true; 
                     r.finishTime = elapsed;
@@ -1213,13 +1274,136 @@
                 }
             });
 
-            if (runners.every(r => r.finished)) { 
-                isRacing = false; 
-                setTimeout(() => finishGame(runners), 1000); 
+            // 每100ms廣播一次狀態
+            if (now - lastBroadcast > 100) {
+                lastBroadcast = now;
+                
+                const syncData = {
+                    phase: 'racing',
+                    elapsed: elapsed,
+                    timestamp: now,
+                    runners: runners.map((r, idx) => {
+                        // 找出當前事件
+                        let currentEvent = null;
+                        r.events.forEach(ev => {
+                            if (elapsed >= ev.t && elapsed <= ev.t + 1.5) {
+                                currentEvent = ev.type;
+                            }
+                        });
+                        
+                        return {
+                            name: r.name,
+                            progress: r.progress,
+                            stamina: r.stamina,
+                            isRecovering: r.isRecovering,
+                            recoveryEndTime: r.recoveryEndTime,
+                            finished: r.finished,
+                            finishTime: r.finishTime,
+                            currentEvent: currentEvent
+                        };
+                    })
+                };
+                
+                db.ref('gameState/sync').set(syncData);
             }
-            else { requestAnimationFrame(frame); }
+
+            // 檢查是否所有人完賽
+            if (runners.every(r => r.finished)) { 
+                isRacing = false;
+                const sorted = [...runners].sort((a,b) => a.finishTime - b.finishTime);
+                
+                // 廣播最終結果
+                db.ref('gameState/sync').set({
+                    phase: 'finished',
+                    results: sorted.map(r => ({
+                        name: r.name,
+                        finishTime: r.finishTime
+                    })),
+                    timestamp: now
+                });
+                
+                setTimeout(() => finishGame(sorted), 1000); 
+            } else { 
+                requestAnimationFrame(frame); 
+            }
         }
         requestAnimationFrame(frame);
+    }
+
+    // 玩家模式：監聽並顯示Admin的狀態
+    function runRaceAsPlayer(state, players, finishLineX) {
+        const syncRef = db.ref('gameState/sync');
+        
+        syncRef.on('value', snap => {
+            const syncData = snap.val();
+            if (!syncData) return;
+
+            // 處理倒數階段
+            if (syncData.phase === 'countdown') {
+                document.getElementById('countdown-overlay').style.display = 'flex';
+                document.getElementById('countdown-overlay').innerText = syncData.count;
+                return;
+            }
+
+            // 處理比賽階段
+            if (syncData.phase === 'racing') {
+                document.getElementById('countdown-overlay').style.display = 'none';
+                
+                syncData.runners.forEach((runner, i) => {
+                    const pawn = document.getElementById(`pawn-${i}`);
+                    const stamFill = document.getElementById(`stam-${i}`);
+                    const vis = document.getElementById(`vis-${i}`);
+                    const bub = document.getElementById(`bubble-${i}`);
+
+                    if (!pawn || !stamFill || !vis || !bub) return;
+
+                    // 更新位置
+                    pawn.style.left = (runner.progress * finishLineX) + "px";
+                    
+                    // 更新體力條
+                    stamFill.style.width = runner.stamina + "%";
+
+                    // 更新視覺效果
+                    vis.className = "horse-visual";
+                    
+                    if (runner.finished) {
+                        bub.className = "finish-emoji";
+                        const finishedCount = syncData.runners.filter(r => r.finished).length;
+                        const rank = syncData.runners.filter(r => r.finished).findIndex(r => r.name === runner.name);
+                        bub.innerText = rankEmojis[rank] || "🏁";
+                    } else if (runner.isRecovering) {
+                        vis.classList.add('effect-exhausted');
+                        const rem = runner.recoveryEndTime - syncData.elapsed;
+                        if (rem > 3.5) {
+                            bub.className = "speech-bubble bubble-danger";
+                            bub.innerText = "😵 已爆肝...";
+                        } else {
+                            bub.className = "speech-bubble bubble-recover";
+                            bub.innerText = `🩹 躺平中 ${Math.ceil(rem)}s`;
+                        }
+                    } else if (runner.currentEvent) {
+                        if (runner.currentEvent === 'burst') {
+                            vis.classList.add('effect-sprint');
+                            bub.className = "speech-bubble";
+                            bub.innerText = "🔥 衝刺！";
+                        } else if (runner.currentEvent === 'slip') {
+                            vis.classList.add('effect-slip');
+                            bub.className = "speech-bubble bubble-danger";
+                            bub.innerText = "⛸️ 滑倒！";
+                        }
+                    } else {
+                        bub.innerText = "";
+                        bub.className = "";
+                    }
+                });
+            }
+
+            // 處理完賽階段
+            if (syncData.phase === 'finished') {
+                syncRef.off(); // 停止監聽
+                setTimeout(() => finishGame(syncData.results), 500);
+            }
+        });
     }
 
     function finishGame(results) {
