@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -7,928 +8,155 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        
         :root { 
-            --pixel-gold: #ffcc00;
-            --pixel-brown: #8b4513;
-            --pixel-dark: #2d1b00;
-            --pixel-grass: #4a7c59;
-            --pixel-sky: #5fcde4;
-            --pixel-red: #ff4444;
-            --pixel-green: #44ff88;
-            --pixel-orange: #ff8844;
-            --pixel-blue: #4488ff;
-            --pixel-white: #fff5e1;
-            --pixel-shadow: #1a0d00;
+            --primary: #ff3e3e; --gold: #ffd700; --track: #222;
+            --success: #00ff88; --danger: #ff0055; --sprint: #ffaa00; --recover: #00d4ff;
         }
 
-        * {
-            image-rendering: pixelated;
-            image-rendering: -moz-crisp-edges;
-            image-rendering: crisp-edges;
-        }
+        body { font-family: 'PingFang TC', sans-serif; background: #0a0a0a; color: white; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
 
-        body { 
-            font-family: 'Press Start 2P', monospace; 
-            background: var(--pixel-dark); 
-            color: var(--pixel-white); 
-            margin: 0; 
-            padding: 0; 
-            height: 100vh; 
-            overflow: hidden;
-            font-size: 11px;
-        }
+        .btn-ui { border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 0 rgba(0,0,0,0.3); }
+        .btn-ui:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
 
-        .btn-ui { 
-            font-family: 'Press Start 2P', monospace;
-            border: none;
-            padding: 12px 24px;
-            cursor: pointer;
-            transition: none;
-            position: relative;
-            font-size: 11px;
-            text-transform: uppercase;
-            background: var(--pixel-gold);
-            color: var(--pixel-dark);
-            box-shadow: 
-                0 4px 0 var(--pixel-brown),
-                0 4px 0 2px var(--pixel-shadow);
-        }
-        
-        .btn-ui:hover {
-            background: #ffd700;
-            transform: translateY(1px);
-            box-shadow: 
-                0 3px 0 var(--pixel-brown),
-                0 3px 0 2px var(--pixel-shadow);
-        }
-        
-        .btn-ui:active { 
-            transform: translateY(4px); 
-            box-shadow: none;
-        }
-
+        /* Header */
         .header-bar { 
-            background: 
-                repeating-linear-gradient(
-                    0deg,
-                    var(--pixel-brown) 0px,
-                    var(--pixel-brown) 2px,
-                    #6b3410 2px,
-                    #6b3410 4px
-                );
-            padding: 12px 15px;
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            height: 50px;
-            border-bottom: 4px solid var(--pixel-gold);
-            box-shadow: 0 4px 0 var(--pixel-shadow);
-            position: relative;
-            z-index: 1000;
+            background: linear-gradient(180deg, #333 0%, #111 100%); 
+            padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; 
+            height: 60px; border-bottom: 2px solid var(--gold); position: relative; z-index: 1000;
         }
 
-        .header-bar::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: repeating-linear-gradient(
-                90deg,
-                var(--pixel-gold) 0px,
-                var(--pixel-gold) 8px,
-                transparent 8px,
-                transparent 16px
-            );
-        }
-
-        .page { 
-            display: none; 
-            height: calc(100vh - 54px); 
-            width: 100vw; 
-            position: absolute; 
-            flex-direction: column; 
-            overflow-y: auto;
-            background: 
-                repeating-linear-gradient(
-                    0deg,
-                    rgba(0,0,0,0.1) 0px,
-                    rgba(0,0,0,0.1) 1px,
-                    transparent 1px,
-                    transparent 2px
-                );
-        }
+        .page { display: none; height: calc(100vh - 60px); width: 100vw; position: absolute; flex-direction: column; overflow-y: auto; }
         .page.active { display: flex; }
         
-        .login-grid { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 15px; 
-            padding: 20px; 
-            width: 100%; 
-            box-sizing: border-box;
-        }
-        
+        .login-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 20px; width: 100%; box-sizing: border-box; }
         .name-card { 
-            background: 
-                linear-gradient(135deg, 
-                    var(--pixel-brown) 0%,
-                    #6b3410 50%,
-                    var(--pixel-brown) 100%
-                );
-            padding: 30px 15px;
-            text-align: center; 
-            font-size: 14px;
-            font-weight: 400;
-            color: var(--pixel-gold);
-            position: relative;
-            cursor: pointer;
-            transition: all 0.1s;
-            box-shadow: 
-                0 4px 0 var(--pixel-shadow),
-                inset 0 -2px 0 rgba(0,0,0,0.5),
-                inset 0 2px 0 rgba(255,255,255,0.2);
+            background: #222; border: 2px solid #444; border-radius: 12px; padding: 25px 10px;
+            text-align: center; font-size: 20px; font-weight: 800; color: #fff; position: relative;
         }
+        .name-card.taken { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
 
-        .name-card::before {
-            content: '★';
-            position: absolute;
-            top: 5px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 12px;
-            color: var(--pixel-gold);
-        }
-
-        .name-card:hover {
-            background: 
-                linear-gradient(135deg, 
-                    #9b5513 0%,
-                    #7b4413 50%,
-                    #9b5513 100%
-                );
-            transform: translateY(2px);
-            box-shadow: 
-                0 2px 0 var(--pixel-shadow),
-                inset 0 -2px 0 rgba(0,0,0,0.5),
-                inset 0 2px 0 rgba(255,255,255,0.2);
-        }
-        
-        .name-card.taken { 
-            opacity: 0.3;
-            filter: grayscale(1);
-            pointer-events: none;
-            background: #333;
-        }
-
-        .name-card.taken::before {
-            content: '✖';
-            color: var(--pixel-red);
-        }
-
-        .horse-list { 
-            padding: 15px; 
-            padding-bottom: 120px;
-        }
-        
+        /* 選馬卡片 */
+        .horse-list { padding: 15px; padding-bottom: 120px; }
         .horse-card { 
-            background: 
-                linear-gradient(to bottom,
-                    #3a2a1a 0%,
-                    #2a1a0a 100%
-                );
-            border: 3px solid var(--pixel-brown);
-            padding: 15px; 
-            margin-bottom: 15px;
-            position: relative;
-            transition: all 0.2s;
-            box-shadow: 
-                4px 4px 0 var(--pixel-shadow),
-                inset 0 0 0 1px rgba(255,255,255,0.1);
+            background: #1a1a1a; border: 2px solid #333; border-radius: 16px; padding: 15px; 
+            margin-bottom: 15px; position: relative; border-left: 6px solid #444; transition: 0.2s;
         }
+        .horse-card.selected { border-color: var(--success); background: #12221a; }
+        .horse-card.occupied { opacity: 0.5; filter: grayscale(0.5); cursor: not-allowed; }
+        .owner-badge { position: absolute; top: 10px; right: 10px; background: var(--primary); color: white; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; z-index: 2; }
 
-        .horse-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: repeating-linear-gradient(
-                90deg,
-                var(--pixel-gold) 0px,
-                var(--pixel-gold) 4px,
-                transparent 4px,
-                transparent 8px
-            );
-        }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+        .stat-label { font-size: 10px; color: #888; margin-bottom: 2px; }
+        .stat-bar { height: 4px; background: #000; border-radius: 2px; overflow: hidden; }
+        .stat-fill { height: 100%; background: var(--gold); }
+        .horse-desc { font-size: 12px; color: #bbb; font-style: italic; border-top: 1px solid #333; padding-top: 8px; }
 
-        .horse-card:hover {
-            border-color: var(--pixel-gold);
-            transform: translateX(2px);
-            box-shadow: 
-                6px 6px 0 var(--pixel-shadow),
-                inset 0 0 0 1px var(--pixel-gold);
-        }
+        /* 比賽跑道 */
+        #page-track { background: #111; }
+        .track-bg { height: 100%; position: relative; background: #151515; }
+        #lanes-render-area { display: flex; flex-direction: column; height: 100%; }
+        .lane { position: relative; border-bottom: 1px solid #252525; flex-grow: 1; display: flex; align-items: center; padding-left: 10px; }
+        .finish-line { position: absolute; right: 0; top: 0; bottom: 0; width: 40px; background: repeating-linear-gradient(45deg, #fff, #fff 10px, #000 10px, #000 20px); border-left: 4px solid var(--gold); z-index: 5; }
+
+        .horse-pawn { position: absolute; left: 0; display: flex; align-items: center; width: 140px; transition: left 0.1s linear; }
+        .horse-visual { font-size: 38px; transform: scaleX(-1); animation: move 0.4s infinite; transition: filter 0.3s; }
         
-        .horse-card.selected { 
-            border-color: var(--pixel-green);
-            background: 
-                linear-gradient(to bottom,
-                    #2a3a2a 0%,
-                    #1a2a1a 100%
-                );
-            animation: pixel-glow 1s infinite;
-        }
+        /* 特效 Class */
+        .effect-sprint { filter: drop-shadow(0 0 15px var(--gold)) scaleX(-1) !important; }
+        .effect-exhausted { filter: drop-shadow(0 0 15px var(--danger)) scaleX(-1) !important; }
+        .effect-slip { animation: slip-shake 0.2s infinite !important; }
 
-        @keyframes pixel-glow {
-            0%, 100% { 
-                box-shadow: 
-                    4px 4px 0 var(--pixel-shadow),
-                    0 0 10px var(--pixel-green);
-            }
-            50% { 
-                box-shadow: 
-                    4px 4px 0 var(--pixel-shadow),
-                    0 0 20px var(--pixel-green);
-            }
-        }
-        
-        .horse-card.occupied { 
-            opacity: 0.5;
-            filter: grayscale(0.8);
-            cursor: not-allowed;
-        }
-        
-        .owner-badge { 
-            position: absolute;
-            top: -10px;
-            right: 10px;
-            background: var(--pixel-red);
-            color: white;
-            padding: 5px 14px;
-            font-size: 9px;
-            font-weight: bold;
-            z-index: 2;
-            box-shadow: 2px 2px 0 var(--pixel-shadow);
-        }
-
-        .stat-grid { 
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 12px 0;
-        }
-        
-        .stat-label { 
-            font-size: 9px;
-            color: var(--pixel-gold);
-            margin-bottom: 4px;
-            text-shadow: 1px 1px 0 var(--pixel-shadow);
-        }
-        
-        .stat-bar { 
-            height: 8px;
-            background: var(--pixel-shadow);
-            border: 2px solid var(--pixel-brown);
-            position: relative;
-            box-shadow: inset 0 2px 0 rgba(0,0,0,0.5);
-        }
-        
-        .stat-fill { 
-            height: 100%;
-            background: 
-                repeating-linear-gradient(
-                    90deg,
-                    var(--pixel-gold) 0px,
-                    var(--pixel-gold) 2px,
-                    #ffdd44 2px,
-                    #ffdd44 4px
-                );
-            box-shadow: 
-                inset 0 -1px 0 rgba(0,0,0,0.3),
-                inset 0 1px 0 rgba(255,255,255,0.3);
-            position: relative;
-            animation: stat-shimmer 2s infinite;
-        }
-
-        @keyframes stat-shimmer {
-            0%, 100% { filter: brightness(1); }
-            50% { filter: brightness(1.2); }
-        }
-        
-        .horse-desc { 
-            font-size: 9px;
-            color: #ccc;
-            line-height: 1.6;
-            border-top: 2px solid var(--pixel-brown);
-            padding-top: 10px;
-            margin-top: 10px;
-        }
-
-        #page-track { 
-            background: 
-                linear-gradient(to bottom,
-                    var(--pixel-sky) 0%,
-                    #7dd4e8 30%,
-                    var(--pixel-grass) 60%,
-                    #3a5c40 100%
-                );
-        }
-
-        .track-bg { 
-            height: 100%;
-            position: relative;
-            background-image:
-                repeating-linear-gradient(
-                    0deg,
-                    transparent 0px,
-                    transparent 2px,
-                    rgba(0,0,0,0.1) 2px,
-                    rgba(0,0,0,0.1) 4px
-                ),
-                repeating-linear-gradient(
-                    90deg,
-                    transparent 0px,
-                    transparent 2px,
-                    rgba(0,0,0,0.05) 2px,
-                    rgba(0,0,0,0.05) 4px
-                );
-        }
-
-        .track-bg::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 30%;
-            background-image:
-                radial-gradient(ellipse 60px 20px at 20% 20%, white 40%, transparent 50%),
-                radial-gradient(ellipse 80px 25px at 60% 15%, white 40%, transparent 50%),
-                radial-gradient(ellipse 50px 18px at 85% 25%, white 40%, transparent 50%);
-            opacity: 0.6;
-            animation: clouds-move 30s linear infinite;
-        }
-
-        @keyframes clouds-move {
-            0% { background-position: 0% 0%; }
-            100% { background-position: 100% 0%; }
-        }
-
-        #lanes-render-area { 
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        
-        .lane { 
-            position: relative;
-            border-bottom: 3px solid rgba(0,0,0,0.3);
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            padding-left: 10px;
-            background: 
-                repeating-linear-gradient(
-                    90deg,
-                    transparent 0px,
-                    transparent 40px,
-                    rgba(255,255,255,0.05) 40px,
-                    rgba(255,255,255,0.05) 80px
-                );
-        }
-
-        .lane::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 100%;
-            background: 
-                repeating-linear-gradient(
-                    0deg,
-                    transparent 0%,
-                    rgba(74, 124, 89, 0.3) 50%,
-                    transparent 100%
-                );
-        }
-        
-        .finish-line { 
-            position: absolute;
-            right: 0;
-            top: 0;
-            bottom: 0;
-            width: 50px;
-            background: 
-                repeating-linear-gradient(
-                    45deg,
-                    var(--pixel-white) 0px,
-                    var(--pixel-white) 8px,
-                    var(--pixel-shadow) 8px,
-                    var(--pixel-shadow) 16px
-                );
-            border-left: 4px solid var(--pixel-gold);
-            z-index: 5;
-            box-shadow: -4px 0 0 var(--pixel-brown);
-        }
-
-        .finish-line::before {
-            content: '🏁';
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 24px;
-            animation: flag-wave 0.5s infinite;
-        }
-
-        @keyframes flag-wave {
-            0%, 100% { transform: translateX(-50%) rotate(-5deg); }
-            50% { transform: translateX(-50%) rotate(5deg); }
-        }
-
-        .horse-pawn { 
-            position: absolute;
-            left: 0;
-            display: flex;
-            align-items: center;
-            width: 140px;
-            transition: left 0.1s linear;
-            z-index: 10;
-            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.5));
-        }
-        
-        .horse-visual { 
-            font-size: 38px;
-            transform: scaleX(-1);
-            animation: pixel-trot 0.3s steps(2) infinite;
-            filter: drop-shadow(0 2px 0 rgba(0,0,0,0.3));
-        }
-
-        @keyframes pixel-trot {
-            0%, 100% { transform: scaleX(-1) translateY(0); }
-            50% { transform: scaleX(-1) translateY(-4px); }
-        }
-        
-        .effect-sprint { 
-            animation: pixel-sprint 0.15s steps(2) infinite !important;
-            filter: 
-                drop-shadow(0 0 8px var(--pixel-gold)) 
-                drop-shadow(0 0 12px var(--pixel-orange))
-                drop-shadow(0 2px 0 rgba(0,0,0,0.3)) !important;
-        }
-
-        @keyframes pixel-sprint {
-            0%, 100% { transform: scaleX(-1) translateY(0) rotate(0deg); }
-            25% { transform: scaleX(-1) translateY(-6px) rotate(-2deg); }
-            75% { transform: scaleX(-1) translateY(-2px) rotate(2deg); }
-        }
-        
-        .effect-exhausted { 
-            filter: 
-                grayscale(0.5) 
-                drop-shadow(0 0 6px var(--pixel-red))
-                drop-shadow(0 2px 0 rgba(0,0,0,0.3)) !important;
-            animation: pixel-exhausted 0.5s steps(2) infinite !important;
-        }
-
-        @keyframes pixel-exhausted {
-            0%, 100% { transform: scaleX(-1) translateY(0); }
-            50% { transform: scaleX(-1) translateY(2px); }
-        }
-        
-        .effect-slip { 
-            animation: pixel-slip 0.1s steps(3) infinite !important;
-        }
-
-        @keyframes pixel-slip {
-            0% { transform: scaleX(-1) rotate(0deg) translateX(0); }
-            33% { transform: scaleX(-1) rotate(15deg) translateX(-2px); }
-            66% { transform: scaleX(-1) rotate(-15deg) translateX(2px); }
-            100% { transform: scaleX(-1) rotate(0deg) translateX(0); }
+        @keyframes move { 0%, 100% { transform: scaleX(-1) translateY(0); } 50% { transform: scaleX(-1) translateY(-6px); } }
+        @keyframes slip-shake { 
+            0% { transform: scaleX(-1) rotate(0deg); } 
+            25% { transform: scaleX(-1) rotate(20deg) translateY(-2px); }
+            75% { transform: scaleX(-1) rotate(-20deg) translateY(2px); }
+            100% { transform: scaleX(-1) rotate(0deg); }
         }
 
         .speech-bubble {
-            position: absolute;
-            top: -60px;
-            left: 10px;
-            background: var(--pixel-white);
-            color: var(--pixel-dark);
-            padding: 8px 16px;
-            font-size: 11px;
-            font-weight: bold;
-            box-shadow: 
-                3px 3px 0 var(--pixel-shadow),
-                inset 0 0 0 2px var(--pixel-brown);
-            z-index: 20;
-            white-space: nowrap;
-            animation: bubble-pop 0.2s steps(3);
+            position: absolute; top: -55px; left: 10px; background: white; color: black;
+            padding: 5px 12px; border-radius: 12px; font-size: 13px; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 20; white-space: nowrap;
         }
+        .speech-bubble::after { content: ''; position: absolute; bottom: -8px; left: 15px; border-width: 8px 8px 0; border-style: solid; border-color: white transparent; }
+        .bubble-danger { background: var(--danger); color: white; }
+        .bubble-danger::after { border-color: var(--danger) transparent; }
+        .bubble-recover { background: var(--recover); color: #000; }
+        .bubble-recover::after { border-color: var(--recover) transparent; }
 
-        @keyframes bubble-pop {
-            0% { transform: scale(0); }
-            60% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        .speech-bubble::after { 
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 15px;
-            width: 0;
-            height: 0;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-top: 8px solid var(--pixel-white);
-            filter: drop-shadow(2px 2px 0 var(--pixel-shadow));
-        }
-        
-        .bubble-danger { 
-            background: var(--pixel-red);
-            color: white;
-            animation: bubble-shake 0.1s steps(2) infinite;
-        }
-
-        @keyframes bubble-shake {
-            0%, 100% { transform: translateX(0); }
-            50% { transform: translateX(-2px); }
-        }
-        
-        .bubble-danger::after { 
-            border-top-color: var(--pixel-red);
-        }
-        
-        .bubble-recover { 
-            background: var(--pixel-blue);
-            color: white;
-        }
-        
-        .bubble-recover::after { 
-            border-top-color: var(--pixel-blue);
-        }
-
-        .stamina-container { 
-            width: 60px;
-            height: 8px;
-            background: var(--pixel-shadow);
-            border: 2px solid var(--pixel-brown);
-            margin-top: 4px;
-            overflow: hidden;
-            box-shadow: inset 0 2px 0 rgba(0,0,0,0.5);
-        }
-        
-        .stamina-fill { 
-            height: 100%;
-            background: 
-                repeating-linear-gradient(
-                    90deg,
-                    var(--pixel-green) 0px,
-                    var(--pixel-green) 2px,
-                    #55ff99 2px,
-                    #55ff99 4px
-                );
-            transition: width 0.05s linear;
-            box-shadow: 
-                inset 0 -1px 0 rgba(0,0,0,0.3),
-                inset 0 1px 0 rgba(255,255,255,0.3);
-        }
+        .stamina-container { width: 50px; height: 4px; background: #000; border-radius: 2px; margin-top: 5px; overflow: hidden; }
+        .stamina-fill { height: 100%; background: var(--success); transition: width 0.3s; }
 
         #countdown-overlay {
-            position: fixed;
-            inset: 0;
-            background: 
-                radial-gradient(
-                    circle,
-                    rgba(0,0,0,0.7) 0%,
-                    rgba(0,0,0,0.9) 100%
-                );
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            font-size: 80px;
-            color: var(--pixel-gold);
-            text-shadow: 
-                4px 4px 0 var(--pixel-shadow),
-                0 0 20px var(--pixel-orange);
-            animation: countdown-pulse 0.5s steps(3) infinite;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
+            display: none; align-items: center; justify-content: center;
+            z-index: 2000; font-size: 150px; font-weight: 900; color: var(--gold);
         }
 
-        @keyframes countdown-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        .admin-monitor-box { 
-            background: 
-                linear-gradient(to bottom,
-                    #2a1a0a 0%,
-                    #1a0a00 100%
-                );
-            border: 3px solid var(--pixel-brown);
-            margin: 15px;
-            padding: 12px;
-            box-shadow: 
-                4px 4px 0 var(--pixel-shadow),
-                inset 0 0 0 1px rgba(255,255,255,0.1);
-        }
-        
-        .player-status-tag { 
-            display: inline-block;
-            padding: 6px 14px;
-            font-size: 9px;
-            margin: 4px;
-            background: var(--pixel-dark);
-            border: 2px solid var(--pixel-brown);
-            color: var(--pixel-white);
-            box-shadow: 2px 2px 0 var(--pixel-shadow);
-        }
-        
-        .player-status-tag.ready { 
-            border-color: var(--pixel-green);
-            color: var(--pixel-green);
-            background: rgba(68, 255, 136, 0.1);
-            animation: ready-blink 1s steps(2) infinite;
-        }
-
-        @keyframes ready-blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-        
-        .admin-persistent-ctrl { 
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            z-index: 9999;
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        #leaderboard-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.9);
-            z-index: 10000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #leaderboard-overlay > div {
-            background: 
-                linear-gradient(to bottom,
-                    var(--pixel-white) 0%,
-                    #f5e5d1 100%
-                );
-            color: var(--pixel-dark);
-            width: 85%;
-            max-width: 400px;
-            padding: 25px;
-            text-align: center;
-            border: 4px solid var(--pixel-gold);
-            box-shadow: 
-                8px 8px 0 var(--pixel-shadow),
-                inset 0 0 0 2px var(--pixel-brown);
-            animation: leaderboard-appear 0.3s steps(5);
-        }
-
-        @keyframes leaderboard-appear {
-            0% { transform: scale(0) rotate(-5deg); }
-            100% { transform: scale(1) rotate(0deg); }
-        }
-
-        #leaderboard-overlay h2 {
-            color: var(--pixel-red);
-            font-size: 18px;
-            margin: 0 0 20px 0;
-            text-shadow: 2px 2px 0 var(--pixel-shadow);
-            animation: title-bounce 0.5s steps(3) infinite;
-        }
-
-        @keyframes title-bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-4px); }
-        }
-
-        #rankings-list {
-            margin: 20px 0;
-            font-size: 11px;
-            text-align: left;
-        }
-
-        #rankings-list > div {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            border-bottom: 2px solid var(--pixel-brown);
-            background: 
-                repeating-linear-gradient(
-                    90deg,
-                    transparent 0px,
-                    transparent 2px,
-                    rgba(0,0,0,0.02) 2px,
-                    rgba(0,0,0,0.02) 4px
-                );
-        }
-
-        #rankings-list > div:nth-child(1) {
-            background: 
-                linear-gradient(to right,
-                    rgba(255, 215, 0, 0.3) 0%,
-                    rgba(255, 215, 0, 0.1) 100%
-                );
-            font-size: 13px;
-        }
-
-        #rankings-list > div:nth-child(2) {
-            background: 
-                linear-gradient(to right,
-                    rgba(192, 192, 192, 0.3) 0%,
-                    rgba(192, 192, 192, 0.1) 100%
-                );
-        }
-
-        #rankings-list > div:nth-child(3) {
-            background: 
-                linear-gradient(to right,
-                    rgba(205, 127, 50, 0.3) 0%,
-                    rgba(205, 127, 50, 0.1) 100%
-                );
-        }
-
-        .pixel-title {
-            position: relative;
-            display: inline-block;
-            padding: 12px 24px;
-            background: var(--pixel-brown);
-            color: var(--pixel-gold);
-            border: 3px solid var(--pixel-gold);
-            box-shadow: 
-                4px 4px 0 var(--pixel-shadow),
-                inset 0 0 0 2px var(--pixel-dark);
-            margin: 10px 0;
-            font-size: 14px;
-            letter-spacing: 2px;
-            animation: title-glow 2s steps(4) infinite;
-        }
-
-        @keyframes title-glow {
-            0%, 100% { 
-                box-shadow: 
-                    4px 4px 0 var(--pixel-shadow),
-                    inset 0 0 0 2px var(--pixel-dark),
-                    0 0 10px var(--pixel-gold);
-            }
-            50% { 
-                box-shadow: 
-                    4px 4px 0 var(--pixel-shadow),
-                    inset 0 0 0 2px var(--pixel-dark),
-                    0 0 20px var(--pixel-gold);
-            }
-        }
-
-        .info-box {
-            background: 
-                linear-gradient(to bottom,
-                    #3a2a1a 0%,
-                    #2a1a0a 100%
-                );
-            padding: 15px;
-            border: 3px solid var(--pixel-brown);
-            margin: 12px 15px;
-            font-size: 9px;
-            line-height: 2;
-            color: var(--pixel-white);
-            box-shadow: 
-                4px 4px 0 var(--pixel-shadow),
-                inset 0 0 0 1px rgba(255,255,255,0.1);
-        }
-
-        .info-box b {
-            color: var(--pixel-gold);
-            text-shadow: 1px 1px 0 var(--pixel-shadow);
-        }
-
-        ::-webkit-scrollbar {
-            width: 12px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--pixel-dark);
-            border: 2px solid var(--pixel-brown);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--pixel-brown);
-            border: 2px solid var(--pixel-gold);
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--pixel-gold);
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
-
-        .pixel-stars {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: white;
-            box-shadow: 
-                20px 30px white,
-                40px 10px white,
-                70px 50px white,
-                90px 20px white,
-                120px 40px white;
-            animation: twinkle 3s infinite;
-        }
+        .admin-monitor-box { background: #1a1a1a; border: 1px solid #333; margin: 15px; padding: 12px; border-radius: 10px; }
+        .player-status-tag { display: inline-block; padding: 3px 10px; border-radius: 5px; font-size: 11px; margin: 3px; background: #222; border: 1px solid #444; }
+        .player-status-tag.ready { border-color: var(--success); color: var(--success); }
+        .admin-persistent-ctrl { position: fixed; bottom: 20px; left: 20px; z-index: 9999; display: none; flex-direction: column; gap: 10px; }
     </style>
 </head>
 <body>
 
+<audio id="bgm" loop src="https://assets.mixkit.co/music/preview/mixkit-fast-game-action-loop-460.mp3"></audio>
 <div id="countdown-overlay">READY</div>
 
 <div class="header-bar" id="header">
     <div id="header-left">
-        <button class="btn-ui" id="btn-back" onclick="logout()" style="background:var(--pixel-red); color:white; display:none;">← 返回</button>
+        <button class="btn-ui" id="btn-back" onclick="logout()" style="background:#444; color:white; padding:8px 15px; display:none;">⬅ 返回選人</button>
     </div>
     <div id="header-user-info" style="text-align:right;">
-        <div id="label-user-name" style="font-size:12px; color:var(--pixel-gold); text-shadow: 2px 2px 0 var(--pixel-shadow);">GUEST</div>
+        <div id="label-user-name" style="font-weight:bold; color:var(--gold);">GUEST</div>
     </div>
 </div>
 
 <div id="page-login" class="page active">
     <div id="admin-login-monitor" style="display:none;" class="admin-monitor-box">
-        <div style="font-size:10px; color:var(--pixel-gold); margin-bottom:8px; text-shadow: 1px 1px 0 var(--pixel-shadow);">
-            [ADMIN] 即時選馬進度：
-        </div>
+        <div style="font-size:12px; color:var(--gold); margin-bottom:8px;">[ADMIN] 即時選馬進度：</div>
         <div id="admin-status-grid"></div>
     </div>
     <div style="text-align:center; padding:20px 0;">
-        <h1 class="pixel-title" style="margin:20px auto; display:inline-block;">
-            🐴 AIOT 2026<br>馬年賽馬獎金賽 🐴
-        </h1>
-        <p style="color:var(--pixel-gold); font-size:10px; margin-top:15px;">
-            點擊你的名字加入比賽
-        </p>
+        <h1 style="color:var(--gold); margin:0; letter-spacing:4px;">AIOT 2026 馬年賽馬獎金賽</h1>
+        <p style="color:#666;">點擊你的名字加入比賽</p>
     </div>
     <div class="login-grid" id="login-grid"></div>
 </div>
 
 <div id="page-setup" class="page">
-    <div style="text-align:center; padding: 20px 15px 10px;">
-        <h2 class="pixel-title" style="font-size:13px; margin:10px auto; display:inline-block;">
-            🐎 選擇戰馬 🐎
-        </h2>
-    </div>
-    <div class="info-box">
-        <b style="font-size:10px;">📊 屬性影響說明：</b><br><br>
-        <b>• 速度：</b>基礎移動速度。速度越快，體力消耗也越快。<br>
-        <b>• 體力：</b>影響續航力。數值越高，越不容易進入「爆肝」狀態。<br>
-        <b>• 爆發：</b>衝刺時的增益強度。數值越高，觸發衝刺時噴發越遠。<br>
-        <b>• 運氣：</b>數值越高，越不容易滑倒，且觸發衝刺機率越高。
+    <div style="text-align:center; padding: 25px 15px 10px;">
+        <h2 style="color:var(--gold); margin:0; font-size:24px;">🐎 請選擇您的參賽戰馬</h2>
+        <div style="font-size:12px; color:#aaa; margin-top:12px; line-height:1.6; background:#1a1a1a; padding:12px; border-radius:10px; text-align:left; border:1px solid #333;">
+            <b style="color:var(--gold);">📊 屬性影響說明：</b><br>
+            • <b>速度：</b>基礎移動速度。速度越快，體力消耗也越快。<br>
+            • <b>體力：</b>影響續航力。數值越高，越不容易進入「爆肝」躺平狀態。<br>
+            • <b>爆發：</b>衝刺時的增益強度。數值越高，觸發衝刺時噴發越遠。<br>
+            • <b>運氣：</b>數值越高，越不容易發生滑倒意外，且觸發衝刺機率越高。
+        </div>
     </div>
     <div class="horse-list" id="horse-selection-list"></div>
 </div>
 
 <div id="page-track" class="page">
     <div class="track-bg">
-        <div class="pixel-stars" style="top:20px; left:30px;"></div>
-        <div class="pixel-stars" style="top:50px; left:200px; animation-delay: 1s;"></div>
-        <div class="pixel-stars" style="top:80px; left:350px; animation-delay: 2s;"></div>
         <div class="finish-line"></div>
         <div id="lanes-render-area"></div>
     </div>
 </div>
 
 <div class="admin-persistent-ctrl" id="admin-ctrl">
-    <button class="btn-ui" id="admin-start-btn" onclick="adminStart()" style="background:var(--pixel-green); color:var(--pixel-dark); padding:14px 28px; font-size:11px;">
-        🏁 開始比賽
-    </button>
-    <button class="btn-ui" id="admin-reset-btn" onclick="adminReset()" style="background:var(--pixel-red); color:white; padding:12px 24px; font-size:10px;">
-        🔄 重置全場
-    </button>
+    <button class="btn-ui" id="admin-start-btn" onclick="adminStart()" style="background:var(--success); color:black; padding:15px 30px; font-size:18px;">🏁 開始比賽</button>
+    <button class="btn-ui" id="admin-reset-btn" onclick="adminReset()" style="background:var(--danger); color:white; padding:10px 20px;">🔄 重置全場</button>
 </div>
 
-<div id="leaderboard-overlay">
-    <div>
-        <h2>🏆 排行榜 🏆</h2>
-        <div id="rankings-list"></div>
-        <button class="btn-ui" onclick="adminReset()" style="background:var(--pixel-brown); color:var(--pixel-gold); width:100%; padding:12px; display:none; margin-top:15px;" id="lb-reset-btn">
-            下一輪比賽
-        </button>
+<div id="leaderboard-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; display:none; align-items:center; justify-content:center;">
+    <div style="background:white; color:black; width:85%; border-radius:20px; padding:30px; text-align:center;">
+        <h2 style="color:var(--danger);">🏆 排行榜 🏆 </h2>
+        <div id="rankings-list" style="margin:20px 0; font-weight:bold; text-align: left;"></div>
+        <button class="btn-ui" onclick="adminReset()" style="background:#111; color:white; width:100%; padding:15px; display:none;" id="lb-reset-btn">下一輪比賽</button>
     </div>
 </div>
 
@@ -950,7 +178,7 @@
         { id: 0, trait: "薪水小偷", stats: {spd: 60, sta: 95, burst: 40, lck: 70}, desc: "擅長在主管視線外緩步前進，體力深不可測。" },
         { id: 1, trait: "下班戰神", stats: {spd: 55, sta: 65, burst: 95, lck: 60}, desc: "一旦夕陽西下，體力再低也能爆發衝刺。" },
         { id: 2, trait: "爆肝王", stats: {spd: 95, sta: 25, burst: 85, lck: 30}, desc: "起步瞬間即巔峰，但爆肝倒數是他的日常。" },
-        { id: 3, trait: "會議戰鬥機", stats: {spd: 75, sta: 60, burst: 60, lck: 80}, desc: "節奏感極強,以穩定的高語速壓制全場。" },
+        { id: 3, trait: "會議戰鬥機", stats: {spd: 75, sta: 60, burst: 60, lck: 80}, desc: "節奏感極強，以穩定的高語速壓制全場。" },
         { id: 4, trait: "咖啡中毒者", stats: {spd: 80, sta: 45, burst: 75, lck: 55}, desc: "依賴咖啡因提速，沒咖啡時體力掉超快。" },
         { id: 5, trait: "甩鍋專業戶", stats: {spd: 45, sta: 85, burst: 30, lck: 99}, desc: "擁有神級閃避，幾乎不會滑倒，運氣點滿。" },
         { id: 6, trait: "加班邊緣人", stats: {spd: 55, sta: 90, burst: 50, lck: 65}, desc: "雖然沒存在感，但體力驚人且跑得異常穩。" },
@@ -969,9 +197,6 @@
     const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
     let serverOffset = 0;
     const rankEmojis = ["🥳", "😎", "😊", "😐", "🤔", "😓", "😫", "😭", "💀", "🪦"];
-    
-    // 全局變量
-    let syncListener = null;
 
     db.ref(".info/serverTimeOffset").on("value", s => serverOffset = s.val());
 
@@ -986,11 +211,7 @@
         names.forEach(n => {
             const d = document.createElement('div');
             d.className = 'name-card'; d.id = `user-${n}`; d.innerText = n;
-            d.onclick = () => { 
-                myName = n; 
-                localStorage.setItem('race_user', n); 
-                db.ref(`users/${n}`).set(true);
-            };
+            d.onclick = () => { myName = n; localStorage.setItem('race_user', n); db.ref(`users/${n}`).set(true); document.getElementById('bgm').play(); };
             loginGrid.appendChild(d);
         });
 
@@ -1000,9 +221,9 @@
             d.className = 'horse-card'; d.id = `slot-${i}`;
             d.innerHTML = `
                 <div class="owner-badge" id="owner-${i}" style="display:none;"></div>
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
-                    <span style="font-size:32px;">🐎</span>
-                    <div style="font-weight:bold; color:var(--pixel-gold); font-size:12px; text-shadow: 1px 1px 0 var(--pixel-shadow);">${h.trait}</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:30px;">🐎</span>
+                    <div style="font-weight:bold; color:var(--gold); font-size:18px;">${h.trait}</div>
                 </div>
                 <div class="stat-grid">
                     ${renderStat("速度", h.stats.spd)} ${renderStat("體力", h.stats.sta)}
@@ -1018,14 +239,7 @@
         listenFirebase();
     }
 
-    function renderStat(label, val) { 
-        return `<div>
-            <div class="stat-label">${label}</div>
-            <div class="stat-bar">
-                <div class="stat-fill" style="width:${val}%"></div>
-            </div>
-        </div>`; 
-    }
+    function renderStat(label, val) { return `<div><div class="stat-label">${label}</div><div class="stat-bar"><div class="stat-fill" style="width:${val}%"></div></div></div>`; }
 
     function logout() {
         if(myName) { db.ref(`users/${myName}`).remove(); db.ref(`assignments/${myName}`).remove(); }
@@ -1061,13 +275,6 @@
             } else {
                 if(isAdmin) document.getElementById('admin-start-btn').style.display = 'block';
                 document.getElementById('leaderboard-overlay').style.display = 'none';
-                
-                // 清理之前的監聽器
-                if (syncListener) {
-                    db.ref('gameState/sync').off('value', syncListener);
-                    syncListener = null;
-                }
-                
                 if (document.getElementById('page-track').classList.contains('active')) {
                     setTimeout(() => { if (!s || s.status !== 'racing') location.reload(); }, 500);
                 }
@@ -1091,61 +298,34 @@
 
     function adminStart() {
         db.ref('assignments').once('value', snap => {
-            const players = snap.val(); 
-            if (!players) return alert("無人參賽！");
-            
-            const raceData = {}; 
-            Object.entries(players).forEach(([name, hIdx]) => {
-                const h = horseLibrary[hIdx]; 
-                const events = [];
-                for(let j=0; j<3; j++) {
-                    events.push({ 
-                        t: 8 + (j * 8) + Math.random() * 5, 
-                        type: (Math.random()*100 < h.stats.lck) ? 'burst' : 'slip' 
-                    });
-                }
+            const players = snap.val(); if (!players) return alert("無人參賽！");
+            const raceData = {}; Object.entries(players).forEach(([name, hIdx]) => {
+                const h = horseLibrary[hIdx]; const events = [];
+                for(let j=0; j<3; j++) events.push({ t: 8 + (j * 8) + Math.random() * 5, type: (Math.random()*100 < h.stats.lck) ? 'burst' : 'slip' });
                 raceData[name] = { hIdx, events };
             });
-            
-            // 清除舊的sync數據
-            db.ref('gameState/sync').remove().then(() => {
-                db.ref('gameState').set({ 
-                    status: 'racing', 
-                    startTime: Date.now() + serverOffset + 4000, 
-                    raceData
-                });
-            });
+            db.ref('gameState').set({ status: 'racing', startTime: Date.now() + serverOffset + 4000, raceData });
         });
     }
 
-    function adminReset() {
-        // 清理監聽器
-        if (syncListener) {
-            db.ref('gameState/sync').off('value', syncListener);
-            syncListener = null;
-        }
-        
-        db.ref('users').remove(); 
-        db.ref('assignments').remove();
-        db.ref('gameState').remove();
-        setTimeout(() => location.reload(), 300);
+    function adminReset() { 
+        db.ref('users').remove(); db.ref('assignments').remove();
+        db.ref('gameState').set({ status: 'idle' }); 
     }
 
     function runRace(state) {
         switchPage('page-track');
-        const renderArea = document.getElementById('lanes-render-area'); 
-        renderArea.innerHTML = "";
+        const renderArea = document.getElementById('lanes-render-area'); renderArea.innerHTML = "";
         const players = Object.entries(state.raceData);
         
         players.forEach(([name, data], idx) => {
-            const div = document.createElement('div'); 
-            div.className = 'lane';
+            const div = document.createElement('div'); div.className = 'lane';
             div.innerHTML = `
                 <div class="horse-pawn" id="pawn-${idx}">
                     <div id="bubble-${idx}"></div>
                     <div class="horse-visual" id="vis-${idx}">🐎</div>
                     <div style="margin-left:10px;">
-                        <div style="font-size:10px; font-weight:bold; text-shadow: 1px 1px 0 rgba(0,0,0,0.5);">${name}</div>
+                        <div style="font-size:10px; font-weight:bold;">${name}</div>
                         <div class="stamina-container"><div class="stamina-fill" id="stam-${idx}" style="width:100%"></div></div>
                     </div>
                 </div>
@@ -1154,266 +334,58 @@
         });
 
         const finishLineX = renderArea.offsetWidth - 140;
-
-        if (isAdmin) {
-            runRaceAsAdmin(state, players, finishLineX);
-        } else {
-            runRaceAsPlayer(state, players, finishLineX);
-        }
-    }
-
-    function runRaceAsAdmin(state, players, finishLineX) {
-        const runners = players.map(([name, data]) => ({ 
-            name, 
-            stats: horseLibrary[data.hIdx].stats, 
-            events: data.events, 
-            progress: 0, 
-            stamina: 100, 
-            isRecovering: false, 
-            recoveryEndTime: 0, 
-            finished: false,
-            finishTime: 0
-        }));
-        
+        const runners = players.map(([name, data]) => ({ name, stats: horseLibrary[data.hIdx].stats, events: data.events, progress: 0, stamina: 100, isRecovering: false, recoveryEndTime: 0, finished: false }));
         let lastT = Date.now() + serverOffset;
         let isRacing = true;
-        let lastBroadcast = 0;
-        let frameCount = 0;
 
         function frame() {
             if (!isRacing) return;
-            const now = Date.now() + serverOffset; 
-            const dt = (now - lastT) / 1000; 
-            lastT = now; 
-            const elapsed = (now - state.startTime) / 1000;
-            frameCount++;
+            const now = Date.now() + serverOffset; const dt = (now - lastT) / 1000; lastT = now; const elapsed = (now - state.startTime) / 1000;
             
-            if (elapsed < 0) { 
-                const count = Math.ceil(Math.abs(elapsed)); 
-                document.getElementById('countdown-overlay').style.display = 'flex'; 
-                document.getElementById('countdown-overlay').innerText = count > 3 ? "READY" : count; 
-                
-                // 每200ms廣播倒數
-                if (now - lastBroadcast > 200) {
-                    lastBroadcast = now;
-                    db.ref('gameState/sync').set({
-                        phase: 'countdown',
-                        count: count > 3 ? "READY" : count
-                    }).catch(err => console.error('廣播失敗:', err));
-                }
-                
-                requestAnimationFrame(frame); 
-                return; 
-            }
-            
-            if (document.getElementById('countdown-overlay').style.display !== 'none') {
-                document.getElementById('countdown-overlay').style.display = 'none';
-            }
+            if (elapsed < 0) { const count = Math.ceil(Math.abs(elapsed)); document.getElementById('countdown-overlay').style.display = 'flex'; document.getElementById('countdown-overlay').innerText = count > 3 ? "READY" : count; requestAnimationFrame(frame); return; }
+            document.getElementById('countdown-overlay').style.display = 'none';
 
-            // 計算所有runner的狀態
             runners.forEach((r, i) => {
                 if (r.finished) return;
                 const bub = document.getElementById(`bubble-${i}`);
                 const stamFill = document.getElementById(`stam-${i}`);
                 const vis = document.getElementById(`vis-${i}`);
-                if (vis) vis.className = "horse-visual";
+                vis.className = "horse-visual";
 
                 if (r.isRecovering) {
-                    if (vis) vis.classList.add('effect-exhausted');
+                    vis.classList.add('effect-exhausted');
                     const rem = r.recoveryEndTime - elapsed;
-                    if (bub) {
-                        if (rem > 3.5) { 
-                            bub.className = "speech-bubble bubble-danger"; 
-                            bub.innerText = "😵 已爆肝..."; 
-                        } else { 
-                            bub.className = "speech-bubble bubble-recover"; 
-                            bub.innerText = `🩹 躺平中 ${Math.ceil(rem)}s`; 
-                        }
-                    }
-                    if (elapsed >= r.recoveryEndTime) { 
-                        r.isRecovering = false; 
-                        r.stamina = 100; 
-                        if (bub) { bub.innerText = ""; bub.className = ""; }
-                    }
+                    if (rem > 3.5) { bub.className = "speech-bubble bubble-danger"; bub.innerText = "😵 已爆肝..."; }
+                    else { bub.className = "speech-bubble bubble-recover"; bub.innerText = `🩹 躺平中 ${Math.ceil(rem)}s`; }
+                    if (elapsed >= r.recoveryEndTime) { r.isRecovering = false; r.stamina = 100; bub.innerText = ""; bub.className = ""; }
                 } else {
-                    let spd = (r.stats.spd / 100) * 0.035; 
-                    let drain = (1.5 - r.stats.sta/100) * 5;
-                    let currentEvent = null;
-                    
+                    let spd = (r.stats.spd / 100) * 0.035; let drain = (1.5 - r.stats.sta/100) * 2.5; let eventActive = false;
                     r.events.forEach(ev => {
                         if (elapsed >= ev.t && elapsed <= ev.t + 1.5) {
-                            currentEvent = ev.type;
-                            if (ev.type === 'burst') { 
-                                spd *= (1.5 + r.stats.burst/100); 
-                                drain *= 6;
-                                if (bub) { bub.className = "speech-bubble"; bub.innerText = "🔥 衝刺！"; }
-                                if (vis) vis.classList.add('effect-sprint'); 
-                            } else { 
-                                r.progress = Math.max(0, r.progress - 0.012 * dt); 
-                                if (bub) { bub.className = "speech-bubble bubble-danger"; bub.innerText = "⛸️ 滑倒！"; }
-                                if (vis) vis.classList.add('effect-slip'); 
-                            }
+                            eventActive = true;
+                            if (ev.type === 'burst') { spd *= (1.5 + r.stats.burst/100); drain *= 5; bub.className = "speech-bubble"; bub.innerText = "🔥 衝刺！"; vis.classList.add('effect-sprint'); }
+                            else { r.progress = Math.max(0, r.progress - 0.012 * dt); bub.className = "speech-bubble bubble-danger"; bub.innerText = "⛸️ 滑倒！"; vis.classList.add('effect-slip'); }
                         }
                     });
-                    
-                    if (!currentEvent && bub) { 
-                        bub.innerText = ""; 
-                        bub.className = ""; 
-                    }
-                    
-                    r.progress += spd * dt; 
-                    r.stamina = Math.max(0, r.stamina - drain * dt); 
-                    if(stamFill) stamFill.style.width = r.stamina + "%";
-                    
-                    if (r.stamina <= 0 && !r.isRecovering) { 
-                        r.isRecovering = true; 
-                        r.recoveryEndTime = elapsed + 5; 
-                    }
-                    
-                    // 記錄當前事件用於廣播
-                    r.currentEvent = currentEvent;
+                    if (!eventActive) { bub.innerText = ""; bub.className = ""; }
+                    r.progress += spd * dt; r.stamina = Math.max(0, r.stamina - drain * dt); if(stamFill) stamFill.style.width = r.stamina + "%";
+                    if (r.stamina <= 0) { r.isRecovering = true; r.recoveryEndTime = elapsed + 5; }
                 }
-                
                 const pawn = document.getElementById(`pawn-${i}`);
                 if(pawn) pawn.style.left = (r.progress * finishLineX) + "px";
-                
-                if (r.progress >= 1 && !r.finished) { 
-                    r.finished = true; 
-                    r.finishTime = elapsed;
-                    if (bub) { bub.className = "finish-emoji"; bub.innerText = rankEmojis[runners.filter(r=>r.finished).length - 1] || "🏁"; }
-                }
+                if (r.progress >= 1) { r.finished = true; r.finishTime = elapsed; bub.className = "finish-emoji"; bub.innerText = rankEmojis[runners.filter(r=>r.finished).length - 1] || "🏁"; }
             });
 
-            // 每100ms廣播一次(每6幀約100ms)
-            if (frameCount % 6 === 0 && now - lastBroadcast > 80) {
-                lastBroadcast = now;
-                
-                const syncData = {
-                    phase: 'racing',
-                    elapsed: elapsed,
-                    runners: runners.map(r => ({
-                        name: r.name,
-                        progress: r.progress,
-                        stamina: r.stamina,
-                        isRecovering: r.isRecovering,
-                        recoveryEndTime: r.recoveryEndTime,
-                        finished: r.finished,
-                        finishTime: r.finishTime,
-                        currentEvent: r.currentEvent || null
-                    }))
-                };
-                
-                db.ref('gameState/sync').set(syncData).catch(err => console.error('廣播失敗:', err));
-            }
-
-            // 檢查是否所有人完賽
-            if (runners.every(r => r.finished)) { 
-                isRacing = false;
-                const sorted = [...runners].sort((a,b) => a.finishTime - b.finishTime);
-                
-                // 廣播最終結果
-                db.ref('gameState/sync').set({
-                    phase: 'finished',
-                    results: sorted.map(r => ({
-                        name: r.name,
-                        finishTime: r.finishTime
-                    }))
-                }).then(() => {
-                    setTimeout(() => finishGame(sorted), 1000);
-                }).catch(err => console.error('廣播最終結果失敗:', err));
-            } else { 
-                requestAnimationFrame(frame); 
-            }
+            if (runners.every(r => r.finished)) { isRacing = false; setTimeout(() => finishGame(runners), 1000); }
+            else { requestAnimationFrame(frame); }
         }
         requestAnimationFrame(frame);
     }
 
-    function runRaceAsPlayer(state, players, finishLineX) {
-        // 清理舊的監聽器
-        if (syncListener) {
-            db.ref('gameState/sync').off('value', syncListener);
-        }
-        
-        syncListener = (snap) => {
-            const syncData = snap.val();
-            if (!syncData) return;
-
-            // 處理倒數階段
-            if (syncData.phase === 'countdown') {
-                document.getElementById('countdown-overlay').style.display = 'flex';
-                document.getElementById('countdown-overlay').innerText = syncData.count;
-                return;
-            }
-
-            // 處理比賽階段
-            if (syncData.phase === 'racing' && syncData.runners) {
-                document.getElementById('countdown-overlay').style.display = 'none';
-                
-                syncData.runners.forEach((runner, i) => {
-                    const pawn = document.getElementById(`pawn-${i}`);
-                    const stamFill = document.getElementById(`stam-${i}`);
-                    const vis = document.getElementById(`vis-${i}`);
-                    const bub = document.getElementById(`bubble-${i}`);
-
-                    if (!pawn) return;
-
-                    // 更新位置
-                    pawn.style.left = (runner.progress * finishLineX) + "px";
-                    
-                    // 更新體力條
-                    if (stamFill) stamFill.style.width = runner.stamina + "%";
-
-                    // 更新視覺效果
-                    if (vis) {
-                        vis.className = "horse-visual";
-                        
-                        if (runner.finished) {
-                            if (bub) {
-                                bub.className = "finish-emoji";
-                                const rank = syncData.runners.filter(r => r.finished).findIndex(r => r.name === runner.name);
-                                bub.innerText = rankEmojis[rank] || "🏁";
-                            }
-                        } else if (runner.isRecovering) {
-                            vis.classList.add('effect-exhausted');
-                            const rem = runner.recoveryEndTime - syncData.elapsed;
-                            if (bub) {
-                                if (rem > 3.5) {
-                                    bub.className = "speech-bubble bubble-danger";
-                                    bub.innerText = "😵 已爆肝...";
-                                } else {
-                                    bub.className = "speech-bubble bubble-recover";
-                                    bub.innerText = `🩹 躺平中 ${Math.ceil(rem)}s`;
-                                }
-                            }
-                        } else if (runner.currentEvent) {
-                            if (runner.currentEvent === 'burst') {
-                                vis.classList.add('effect-sprint');
-                                if (bub) { bub.className = "speech-bubble"; bub.innerText = "🔥 衝刺！"; }
-                            } else if (runner.currentEvent === 'slip') {
-                                vis.classList.add('effect-slip');
-                                if (bub) { bub.className = "speech-bubble bubble-danger"; bub.innerText = "⛸️ 滑倒！"; }
-                            }
-                        } else {
-                            if (bub) { bub.innerText = ""; bub.className = ""; }
-                        }
-                    }
-                });
-            }
-
-            // 處理完賽階段
-            if (syncData.phase === 'finished' && syncData.results) {
-                db.ref('gameState/sync').off('value', syncListener);
-                syncListener = null;
-                setTimeout(() => finishGame(syncData.results), 500);
-            }
-        };
-        
-        db.ref('gameState/sync').on('value', syncListener);
-    }
-
     function finishGame(results) {
+        const sorted = [...results].sort((a,b) => a.finishTime - b.finishTime);
         document.getElementById('leaderboard-overlay').style.display = 'flex';
-        document.getElementById('rankings-list').innerHTML = results.map((r, i) => `<div style="display:flex; justify-content:space-between; padding:12px;"><span>${rankEmojis[i] || ""} #${i+1} ${r.name}</span><span style="color:var(--pixel-red); font-weight:bold;">${getPrize(i+1)}</span></div>`).join('');
+        document.getElementById('rankings-list').innerHTML = sorted.map((r, i) => `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #eee;"><span>${rankEmojis[i] || ""} #${i+1} ${r.name}</span><span style="color:var(--primary)">${getPrize(i+1)}</span></div>`).join('');
     }
 
     function getPrize(r) { return r === 1 ? "現金 $2500" : (r <= 5 ? "新光禮卷 $1000 " : {6:"現金 $500", 7:"現金 $400", 8:"現金 $300", 9:"現金 $200", 10:"現金 $100"}[r] || "-"); }
@@ -1421,3 +393,5 @@
 </script>
 </body>
 </html>
+
+
