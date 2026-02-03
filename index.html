@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -58,7 +57,7 @@
         .lane { position: relative; border-bottom: 1px solid #252525; flex-grow: 1; display: flex; align-items: center; padding-left: 10px; }
         .finish-line { position: absolute; right: 0; top: 0; bottom: 0; width: 40px; background: repeating-linear-gradient(45deg, #fff, #fff 10px, #000 10px, #000 20px); border-left: 4px solid var(--gold); z-index: 5; }
 
-        .horse-pawn { position: absolute; left: 0; display: flex; align-items: center; width: 140px; transition: left 0.1s linear; }
+        .horse-pawn { position: absolute; left: 0; display: flex; align-items: center; width: 140px; transition: left 0.15s linear; }
         .horse-visual { font-size: 38px; transform: scaleX(-1); animation: move 0.4s infinite; transition: filter 0.3s; }
         
         /* 特效 Class */
@@ -161,6 +160,9 @@
 </div>
 
 <script>
+    // =====================================================================
+    // Firebase 設定
+    // =====================================================================
     const firebaseConfig = {
       apiKey: "AIzaSyBHJtwI42b8i6z7zRw6tDgtR4ITSNKWrf8",
       authDomain: "aiot-d53dc.firebaseapp.com",
@@ -174,13 +176,16 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // =====================================================================
+    // 遊戲數據定義
+    // =====================================================================
     const horseLibrary = [
         { id: 0, trait: "薪水小偷", stats: {spd: 60, sta: 95, burst: 40, lck: 70}, desc: "擅長在主管視線外緩步前進，體力深不可測。" },
         { id: 1, trait: "下班戰神", stats: {spd: 55, sta: 65, burst: 95, lck: 60}, desc: "一旦夕陽西下，體力再低也能爆發衝刺。" },
         { id: 2, trait: "爆肝王", stats: {spd: 95, sta: 25, burst: 85, lck: 30}, desc: "起步瞬間即巔峰，但爆肝倒數是他的日常。" },
         { id: 3, trait: "會議戰鬥機", stats: {spd: 75, sta: 60, burst: 60, lck: 80}, desc: "節奏感極強，以穩定的高語速壓制全場。" },
         { id: 4, trait: "咖啡中毒者", stats: {spd: 80, sta: 45, burst: 75, lck: 55}, desc: "依賴咖啡因提速，沒咖啡時體力掉超快。" },
-        { id: 5, trait: "甩鍋專業戶", stats: {spd: 45, sta: 85, burst: 30, lck: 99}, desc: "擁有神級閃避，幾乎不會滑倒，運氣點滿。" },
+        { id: 5, trait: "甩鍋專業戶", stats: {spd: 45, sta: 85, burst: 30, lck: 99}, desc: "拥有神級閃避，幾乎不會滑倒，運氣點滿。" },
         { id: 6, trait: "加班邊緣人", stats: {spd: 55, sta: 90, burst: 50, lck: 65}, desc: "雖然沒存在感，但體力驚人且跑得異常穩。" },
         { id: 7, trait: "截稿衝刺", stats: {spd: 40, sta: 70, burst: 99, lck: 40}, desc: "平時都在混，最後關頭衝刺力量無人能及。" },
         { id: 8, trait: "用嘴做事", stats: {spd: 85, sta: 50, burst: 70, lck: 65}, desc: "用氣勢驅動四肢，爆發力與速度兼具的型男。" },
@@ -200,6 +205,9 @@
 
     db.ref(".info/serverTimeOffset").on("value", s => serverOffset = s.val());
 
+    // =====================================================================
+    // 初始化：login grid + horse selection cards
+    // =====================================================================
     function init() {
         if (isAdmin) {
             document.getElementById('admin-ctrl').style.display = 'flex';
@@ -207,14 +215,22 @@
             document.getElementById('lb-reset-btn').style.display = 'block';
             document.getElementById('label-user-name').innerText = "ADMIN";
         }
+
+        // --- Login Grid ---
         const loginGrid = document.getElementById('login-grid');
         names.forEach(n => {
             const d = document.createElement('div');
             d.className = 'name-card'; d.id = `user-${n}`; d.innerText = n;
-            d.onclick = () => { myName = n; localStorage.setItem('race_user', n); db.ref(`users/${n}`).set(true); document.getElementById('bgm').play(); };
+            d.onclick = () => {
+                myName = n;
+                localStorage.setItem('race_user', n);
+                db.ref(`users/${n}`).set(true);
+                document.getElementById('bgm').play();
+            };
             loginGrid.appendChild(d);
         });
 
+        // --- Horse Selection List ---
         const setupGrid = document.getElementById('horse-selection-list');
         horseLibrary.forEach((h, i) => {
             const d = document.createElement('div');
@@ -231,52 +247,94 @@
                 </div>
                 <div class="horse-desc">${h.desc}</div>
             `;
-            d.onclick = () => { if(!myName) return; db.ref('assignments').once('value', snap => {
-                const a = snap.val() || {}; if (Object.entries(a).some(([p, idx]) => idx === i && p !== myName)) alert("慢了！被選走囉！"); else db.ref(`assignments/${myName}`).set(i);
-            });};
+            d.onclick = () => {
+                if (!myName) return;
+                db.ref('assignments').once('value', snap => {
+                    const a = snap.val() || {};
+                    if (Object.entries(a).some(([p, idx]) => idx === i && p !== myName)) {
+                        alert("慢了！被選走囉！");
+                    } else {
+                        db.ref(`assignments/${myName}`).set(i);
+                    }
+                });
+            };
             setupGrid.appendChild(d);
         });
+
         listenFirebase();
     }
 
-    function renderStat(label, val) { return `<div><div class="stat-label">${label}</div><div class="stat-bar"><div class="stat-fill" style="width:${val}%"></div></div></div>`; }
+    function renderStat(label, val) {
+        return `<div><div class="stat-label">${label}</div><div class="stat-bar"><div class="stat-fill" style="width:${val}%"></div></div></div>`;
+    }
 
     function logout() {
-        if(myName) { db.ref(`users/${myName}`).remove(); db.ref(`assignments/${myName}`).remove(); }
+        if (myName) { db.ref(`users/${myName}`).remove(); db.ref(`assignments/${myName}`).remove(); }
         localStorage.removeItem('race_user'); myName = ""; location.reload();
     }
 
+    // =====================================================================
+    // Firebase Listeners
+    // =====================================================================
     function listenFirebase() {
+        // --- users ---
         db.ref('users').on('value', snap => {
             const u = snap.val();
             if (!u && myName && !isAdmin) { localStorage.removeItem('race_user'); location.reload(); return; }
             const users = u || {};
-            names.forEach(n => { const el = document.getElementById(`user-${n}`); users[n] ? el.classList.add('taken') : el.classList.remove('taken'); });
-            if (myName && users[myName]) { switchPage('page-setup'); if(!isAdmin) document.getElementById('label-user-name').innerText = myName; document.getElementById('btn-back').style.display = 'block';
-            } else { switchPage('page-login'); document.getElementById('btn-back').style.display = 'none'; }
+            names.forEach(n => {
+                const el = document.getElementById(`user-${n}`);
+                users[n] ? el.classList.add('taken') : el.classList.remove('taken');
+            });
+            if (myName && users[myName]) {
+                switchPage('page-setup');
+                if (!isAdmin) document.getElementById('label-user-name').innerText = myName;
+                document.getElementById('btn-back').style.display = 'block';
+            } else {
+                switchPage('page-login');
+                document.getElementById('btn-back').style.display = 'none';
+            }
             updateAdminMonitor(users);
         });
 
+        // --- assignments ---
         db.ref('assignments').on('value', snap => {
             const a = snap.val() || {};
             horseLibrary.forEach((_, i) => {
-                const el = document.getElementById(`slot-${i}`); const badge = document.getElementById(`owner-${i}`); const owner = Object.keys(a).find(k => a[k] === i);
+                const el = document.getElementById(`slot-${i}`);
+                const badge = document.getElementById(`owner-${i}`);
+                const owner = Object.keys(a).find(k => a[k] === i);
                 el.classList.remove('selected', 'occupied');
-                if (owner) { badge.style.display = 'block'; badge.innerText = `${owner} 已選`; if (owner === myName) el.classList.add('selected'); else el.classList.add('occupied');
-                } else badge.style.display = 'none';
+                if (owner) {
+                    badge.style.display = 'block';
+                    badge.innerText = `${owner} 已選`;
+                    if (owner === myName) el.classList.add('selected');
+                    else el.classList.add('occupied');
+                } else {
+                    badge.style.display = 'none';
+                }
             });
         });
 
+        // --- gameState（比賽啟動/狀態） ---
         db.ref('gameState').on('value', snap => {
             const s = snap.val();
             if (s && s.status === 'racing') {
-                if(isAdmin) document.getElementById('admin-start-btn').style.display = 'none';
-                runRace(s);
+                if (isAdmin) document.getElementById('admin-start-btn').style.display = 'none';
+                // 切到跑道頁並開始監听 snapshot
+                switchPage('page-track');
+                setupTrackLanes(s.raceData);
+                startListeningSnapshot();
+            } else if (s && s.status === 'finished' && s.results) {
+                // 比賽結束，展示榜
+                showLeaderboard(s.results);
             } else {
-                if(isAdmin) document.getElementById('admin-start-btn').style.display = 'block';
+                // idle
+                if (isAdmin) document.getElementById('admin-start-btn').style.display = 'block';
                 document.getElementById('leaderboard-overlay').style.display = 'none';
+                stopListeningSnapshot();
                 if (document.getElementById('page-track').classList.contains('active')) {
-                    setTimeout(() => { if (!s || s.status !== 'racing') location.reload(); }, 500);
+                    setTimeout(() => location.reload(), 500);
                 }
             }
         });
@@ -285,8 +343,11 @@
     function updateAdminMonitor(users) {
         if (!isAdmin) return;
         db.ref('assignments').once('value', snap => {
-            const a = snap.val() || {}; const container = document.getElementById('admin-status-grid');
-            container.innerHTML = Object.keys(users).map(name => `<span class="player-status-tag ${a[name] !== undefined ? 'ready' : ''}">${name}: ${a[name] !== undefined ? horseLibrary[a[name]].trait : "未選馬"}</span>`).join('');
+            const a = snap.val() || {};
+            const container = document.getElementById('admin-status-grid');
+            container.innerHTML = Object.keys(users).map(name =>
+                `<span class="player-status-tag ${a[name] !== undefined ? 'ready' : ''}">${name}: ${a[name] !== undefined ? horseLibrary[a[name]].trait : "未選馬"}</span>`
+            ).join('');
         });
     }
 
@@ -296,30 +357,212 @@
         document.getElementById('header').style.display = (id === 'page-track') ? 'none' : 'flex';
     }
 
+    // =====================================================================
+    // ADMIN：生成隨機事件 + 啟動權威性遊戲迴圈
+    // =====================================================================
+    let adminLoopTimer = null; // setInterval handle
+
     function adminStart() {
         db.ref('assignments').once('value', snap => {
-            const players = snap.val(); if (!players) return alert("無人參賽！");
-            const raceData = {}; Object.entries(players).forEach(([name, hIdx]) => {
-                const h = horseLibrary[hIdx]; const events = [];
-                for(let j=0; j<3; j++) events.push({ t: 8 + (j * 8) + Math.random() * 5, type: (Math.random()*100 < h.stats.lck) ? 'burst' : 'slip' });
+            const players = snap.val();
+            if (!players) return alert("無人參賽！");
+
+            // 為每位選手生成固定的隨機事件序列（時刻 + 類型）
+            // 這些事件寫進 gameState，所有端都看到同一份
+            const raceData = {};
+            Object.entries(players).forEach(([name, hIdx]) => {
+                const h = horseLibrary[hIdx];
+                const events = [];
+                for (let j = 0; j < 3; j++) {
+                    const t = 8 + (j * 8) + Math.random() * 5;
+                    // 用運氣決定是衝刺還是滑倒
+                    const type = (Math.random() * 100 < h.stats.lck) ? 'burst' : 'slip';
+                    events.push({ t, type });
+                }
                 raceData[name] = { hIdx, events };
             });
-            db.ref('gameState').set({ status: 'racing', startTime: Date.now() + serverOffset + 4000, raceData });
+
+            // startTime 設為 server 時間 + 4秒（倒數）
+            const startTime = Date.now() + serverOffset + 4000;
+
+            db.ref('gameState').set({
+                status: 'racing',
+                startTime,
+                raceData
+            });
+
+            // 啟動權威性遊戲迴圈（只在 admin 端跑）
+            startAdminGameLoop(startTime, raceData);
         });
     }
 
-    function adminReset() { 
-        db.ref('users').remove(); db.ref('assignments').remove();
-        db.ref('gameState').set({ status: 'idle' }); 
+    /**
+     * Admin 端的遊戲迴圈。
+     * 每 100ms 計算一次所有選手的最新進度，
+     * 然後將快照寫進 Firebase → 所有 client 只需從快照渲染。
+     */
+    function startAdminGameLoop(startTime, raceData) {
+        if (adminLoopTimer) clearInterval(adminLoopTimer);
+
+        // 初始化每個選手的狀態（這份數據僅存活在 admin 內存裡）
+        const runners = Object.entries(raceData).map(([name, data]) => ({
+            name,
+            stats: horseLibrary[data.hIdx].stats,
+            events: data.events,
+            progress: 0,
+            stamina: 100,
+            isRecovering: false,
+            recoveryEndTime: 0,
+            finished: false,
+            finishTime: null,
+            // 當前活動的事件狀態（用於傳給 client 顯示氣泡/特效）
+            activeEffect: null   // null | 'burst' | 'slip' | 'exhausted' | 'recovering'
+        }));
+
+        let lastElapsed = -999; // 上一次計算的 elapsed（用於計算 dt）
+
+        adminLoopTimer = setInterval(() => {
+            const now = Date.now() + serverOffset;
+            const elapsed = (now - startTime) / 1000;
+
+            // 倒數階段不計算進度
+            if (elapsed < 0) {
+                // 仍在倒數，不寫 snapshot（client 自己根據 startTime 顯示倒數）
+                lastElapsed = elapsed;
+                return;
+            }
+
+            // 計算 dt（從上次迴圈經過的秒數）
+            // 第一幀進入正式比賽時，dt 從 0 開始
+            const dt = (lastElapsed < 0) ? 0.1 : (elapsed - lastElapsed);
+            lastElapsed = elapsed;
+
+            let allFinished = true;
+
+            runners.forEach(r => {
+                if (r.finished) return;
+                allFinished = false;
+
+                // --- 恢復中（爆肝躺平）---
+                if (r.isRecovering) {
+                    r.activeEffect = 'recovering';
+                    if (elapsed >= r.recoveryEndTime) {
+                        // 恢復完成
+                        r.isRecovering = false;
+                        r.stamina = 100;
+                        r.activeEffect = null;
+                    }
+                    return; // 恢復中不移動
+                }
+
+                // --- 計算速度與體力消耗 ---
+                let spd = (r.stats.spd / 100) * 0.035;
+                let drain = (1.5 - r.stats.sta / 100) * 2.5;
+                r.activeEffect = null;
+
+                // 檢查是否有活動事件
+                r.events.forEach(ev => {
+                    if (elapsed >= ev.t && elapsed <= ev.t + 1.5) {
+                        if (ev.type === 'burst') {
+                            spd *= (1.5 + r.stats.burst / 100);
+                            drain *= 5;
+                            r.activeEffect = 'burst';
+                        } else {
+                            // 滑倒：後退一點
+                            r.progress = Math.max(0, r.progress - 0.012 * dt);
+                            r.activeEffect = 'slip';
+                        }
+                    }
+                });
+
+                // 移動
+                r.progress += spd * dt;
+                r.stamina = Math.max(0, r.stamina - drain * dt);
+
+                // 體力耗盡 → 進入爆肝恢復
+                if (r.stamina <= 0) {
+                    r.isRecovering = true;
+                    r.recoveryEndTime = elapsed + 5;
+                    r.activeEffect = 'exhausted';
+                }
+
+                // 到達終點
+                if (r.progress >= 1) {
+                    r.progress = 1;
+                    r.finished = true;
+                    r.finishTime = elapsed;
+                    r.activeEffect = 'finished';
+                }
+            });
+
+            // --- 將快照寫入 Firebase ---
+            const snapshot = {};
+            runners.forEach(r => {
+                snapshot[r.name] = {
+                    progress: r.progress,
+                    stamina: r.stamina,
+                    activeEffect: r.activeEffect,
+                    isRecovering: r.isRecovering,
+                    recoveryEndTime: r.recoveryEndTime,
+                    finished: r.finished,
+                    finishTime: r.finishTime
+                };
+            });
+
+            db.ref('gameState/snapshot').set(snapshot);
+
+            // --- 全部跑完 → 結束比賽 ---
+            if (runners.every(r => r.finished)) {
+                clearInterval(adminLoopTimer);
+                adminLoopTimer = null;
+
+                // 等一秒讓最後的快照傳播，然後寫入結果
+                setTimeout(() => {
+                    const sorted = [...runners].sort((a, b) => a.finishTime - b.finishTime);
+                    const results = sorted.map((r, i) => ({
+                        name: r.name,
+                        finishTime: r.finishTime,
+                        rank: i + 1
+                    }));
+                    db.ref('gameState').update({ status: 'finished', results });
+                }, 1000);
+            }
+        }, 100); // 每 100ms 跑一次
     }
 
-    function runRace(state) {
-        switchPage('page-track');
-        const renderArea = document.getElementById('lanes-render-area'); renderArea.innerHTML = "";
-        const players = Object.entries(state.raceData);
-        
-        players.forEach(([name, data], idx) => {
-            const div = document.createElement('div'); div.className = 'lane';
+    function stopAdminGameLoop() {
+        if (adminLoopTimer) { clearInterval(adminLoopTimer); adminLoopTimer = null; }
+    }
+
+    function adminReset() {
+        stopAdminGameLoop();
+        stopListeningSnapshot();
+        db.ref('users').remove();
+        db.ref('assignments').remove();
+        db.ref('gameState').set({ status: 'idle' });
+    }
+
+    // =====================================================================
+    // CLIENT：監听 snapshot → 渲染跑道
+    // =====================================================================
+    let snapshotListener = null;
+    let trackSetupDone = false;
+    let playerOrder = []; // 保持渲染顺序固定
+
+    /**
+     * 第一次進入跑道頁時，根據 raceData 建立 lane DOM
+     */
+    function setupTrackLanes(raceData) {
+        if (trackSetupDone) return;
+        trackSetupDone = true;
+        playerOrder = Object.keys(raceData);
+
+        const renderArea = document.getElementById('lanes-render-area');
+        renderArea.innerHTML = "";
+
+        playerOrder.forEach((name, idx) => {
+            const div = document.createElement('div');
+            div.className = 'lane';
             div.innerHTML = `
                 <div class="horse-pawn" id="pawn-${idx}">
                     <div id="bubble-${idx}"></div>
@@ -332,66 +575,144 @@
             `;
             renderArea.appendChild(div);
         });
+    }
 
-        const finishLineX = renderArea.offsetWidth - 140;
-        const runners = players.map(([name, data]) => ({ name, stats: horseLibrary[data.hIdx].stats, events: data.events, progress: 0, stamina: 100, isRecovering: false, recoveryEndTime: 0, finished: false }));
-        let lastT = Date.now() + serverOffset;
-        let isRacing = true;
+    /**
+     * 開始監听 gameState/snapshot，收到新快照就直接套用到 DOM
+     */
+    function startListeningSnapshot() {
+        if (snapshotListener) return; // 已經在監听
 
-        function frame() {
-            if (!isRacing) return;
-            const now = Date.now() + serverOffset; const dt = (now - lastT) / 1000; lastT = now; const elapsed = (now - state.startTime) / 1000;
-            
-            if (elapsed < 0) { const count = Math.ceil(Math.abs(elapsed)); document.getElementById('countdown-overlay').style.display = 'flex'; document.getElementById('countdown-overlay').innerText = count > 3 ? "READY" : count; requestAnimationFrame(frame); return; }
-            document.getElementById('countdown-overlay').style.display = 'none';
+        // 先處理倒數（根據 startTime）
+        db.ref('gameState/startTime').once('value', snap => {
+            const startTime = snap.val();
+            if (startTime) handleCountdown(startTime);
+        });
 
-            runners.forEach((r, i) => {
-                if (r.finished) return;
-                const bub = document.getElementById(`bubble-${i}`);
-                const stamFill = document.getElementById(`stam-${i}`);
-                const vis = document.getElementById(`vis-${i}`);
-                vis.className = "horse-visual";
+        snapshotListener = db.ref('gameState/snapshot').on('value', snap => {
+            const snapshot = snap.val();
+            if (!snapshot) return;
+            renderFromSnapshot(snapshot);
+        });
+    }
 
-                if (r.isRecovering) {
-                    vis.classList.add('effect-exhausted');
-                    const rem = r.recoveryEndTime - elapsed;
-                    if (rem > 3.5) { bub.className = "speech-bubble bubble-danger"; bub.innerText = "😵 已爆肝..."; }
-                    else { bub.className = "speech-bubble bubble-recover"; bub.innerText = `🩹 躺平中 ${Math.ceil(rem)}s`; }
-                    if (elapsed >= r.recoveryEndTime) { r.isRecovering = false; r.stamina = 100; bub.innerText = ""; bub.className = ""; }
-                } else {
-                    let spd = (r.stats.spd / 100) * 0.035; let drain = (1.5 - r.stats.sta/100) * 2.5; let eventActive = false;
-                    r.events.forEach(ev => {
-                        if (elapsed >= ev.t && elapsed <= ev.t + 1.5) {
-                            eventActive = true;
-                            if (ev.type === 'burst') { spd *= (1.5 + r.stats.burst/100); drain *= 5; bub.className = "speech-bubble"; bub.innerText = "🔥 衝刺！"; vis.classList.add('effect-sprint'); }
-                            else { r.progress = Math.max(0, r.progress - 0.012 * dt); bub.className = "speech-bubble bubble-danger"; bub.innerText = "⛸️ 滑倒！"; vis.classList.add('effect-slip'); }
-                        }
-                    });
-                    if (!eventActive) { bub.innerText = ""; bub.className = ""; }
-                    r.progress += spd * dt; r.stamina = Math.max(0, r.stamina - drain * dt); if(stamFill) stamFill.style.width = r.stamina + "%";
-                    if (r.stamina <= 0) { r.isRecovering = true; r.recoveryEndTime = elapsed + 5; }
-                }
-                const pawn = document.getElementById(`pawn-${i}`);
-                if(pawn) pawn.style.left = (r.progress * finishLineX) + "px";
-                if (r.progress >= 1) { r.finished = true; r.finishTime = elapsed; bub.className = "finish-emoji"; bub.innerText = rankEmojis[runners.filter(r=>r.finished).length - 1] || "🏁"; }
-            });
-
-            if (runners.every(r => r.finished)) { isRacing = false; setTimeout(() => finishGame(runners), 1000); }
-            else { requestAnimationFrame(frame); }
+    function stopListeningSnapshot() {
+        if (snapshotListener) {
+            db.ref('gameState/snapshot').off('value', snapshotListener);
+            snapshotListener = null;
         }
-        requestAnimationFrame(frame);
+        trackSetupDone = false;
+        playerOrder = [];
     }
 
-    function finishGame(results) {
-        const sorted = [...results].sort((a,b) => a.finishTime - b.finishTime);
+    /**
+     * 倒數倒計時顯示（client 端根據 startTime 自己算，不影響比賽進度）
+     */
+    function handleCountdown(startTime) {
+        function tick() {
+            const now = Date.now() + serverOffset;
+            const remaining = (startTime - now) / 1000;
+            if (remaining > 0) {
+                const overlay = document.getElementById('countdown-overlay');
+                overlay.style.display = 'flex';
+                overlay.innerText = remaining > 3 ? "READY" : Math.ceil(remaining);
+                requestAnimationFrame(tick);
+            } else {
+                document.getElementById('countdown-overlay').style.display = 'none';
+            }
+        }
+        tick();
+    }
+
+    /**
+     * 從快照數據直接更新 DOM（這是唯一影響畫面的來源）
+     */
+    function renderFromSnapshot(snapshot) {
+        const renderArea = document.getElementById('lanes-render-area');
+        if (!renderArea) return;
+        const finishLineX = renderArea.offsetWidth - 140;
+
+        playerOrder.forEach((name, i) => {
+            const data = snapshot[name];
+            if (!data) return;
+
+            const pawn = document.getElementById(`pawn-${i}`);
+            const vis = document.getElementById(`vis-${i}`);
+            const bub = document.getElementById(`bubble-${i}`);
+            const stamFill = document.getElementById(`stam-${i}`);
+            if (!pawn || !vis || !bub || !stamFill) return;
+
+            // --- 位置 ---
+            pawn.style.left = (data.progress * finishLineX) + "px";
+
+            // --- 體力條 ---
+            stamFill.style.width = data.stamina + "%";
+
+            // --- 視覺特效 + 氣泡（根據 activeEffect）---
+            vis.className = "horse-visual";
+            bub.className = "";
+            bub.innerText = "";
+
+            switch (data.activeEffect) {
+                case 'burst':
+                    vis.classList.add('effect-sprint');
+                    bub.className = "speech-bubble";
+                    bub.innerText = "🔥 衝刺！";
+                    break;
+                case 'slip':
+                    vis.classList.add('effect-slip');
+                    bub.className = "speech-bubble bubble-danger";
+                    bub.innerText = "⛸️ 滑倒！";
+                    break;
+                case 'exhausted':
+                    vis.classList.add('effect-exhausted');
+                    bub.className = "speech-bubble bubble-danger";
+                    bub.innerText = "😵 已爆肝...";
+                    break;
+                case 'recovering':
+                    vis.classList.add('effect-exhausted');
+                    // 計算剩餘恢復時間
+                    // recoveryEndTime 是 elapsed 單位，我們無法在此精確算出，
+                    // 所以用一個通用訊息
+                    bub.className = "speech-bubble bubble-recover";
+                    bub.innerText = "🩹 躺平中...";
+                    break;
+                case 'finished':
+                    bub.className = "speech-bubble";
+                    // 找到這個人的排名
+                    const finishedCount = Object.values(snapshot).filter(s => s.finished).length;
+                    // 排名需要從 results 拿，這裡先顯示 🏁
+                    bub.innerText = "🏁";
+                    break;
+                default:
+                    // 無特效，清除
+                    break;
+            }
+        });
+    }
+
+    /**
+     * 比賽結束 → 展示榜（由 gameState.status === 'finished' 觸發）
+     */
+    function showLeaderboard(results) {
+        // results 是 admin 寫進來的陣列，已經按名次排好
         document.getElementById('leaderboard-overlay').style.display = 'flex';
-        document.getElementById('rankings-list').innerHTML = sorted.map((r, i) => `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #eee;"><span>${rankEmojis[i] || ""} #${i+1} ${r.name}</span><span style="color:var(--primary)">${getPrize(i+1)}</span></div>`).join('');
+        document.getElementById('rankings-list').innerHTML = results.map((r, i) =>
+            `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #eee;">
+                <span>${rankEmojis[i] || ""} #${i + 1} ${r.name}</span>
+                <span style="color:var(--primary)">${getPrize(i + 1)}</span>
+            </div>`
+        ).join('');
     }
 
-    function getPrize(r) { return r === 1 ? "現金 $2500" : (r <= 5 ? "新光禮卷 $1000 " : {6:"現金 $500", 7:"現金 $400", 8:"現金 $300", 9:"現金 $200", 10:"現金 $100"}[r] || "-"); }
+    function getPrize(r) {
+        return r === 1 ? "現金 $2500" : (r <= 5 ? "新光禮卷 $1000 " : ({ 6: "現金 $500", 7: "現金 $400", 8: "現金 $300", 9: "現金 $200", 10: "現金 $100" }[r] || "-"));
+    }
+
+    // =====================================================================
+    // 啟動
+    // =====================================================================
     init();
 </script>
 </body>
 </html>
-
-
