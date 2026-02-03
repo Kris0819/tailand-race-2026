@@ -242,7 +242,11 @@ function listenFirebase(){
         if(myName&&users[myName]){
             if(!isRacingNow)switchPage('page-setup');
             if(!isAdmin)document.getElementById('label-user-name').innerText=myName;
-            document.getElementById('btn-back').style.display='inline-flex';
+            db.ref('gameState/currentRound').once('value', rSnap => 
+                {
+                    const round = rSnap.val() || 1;
+                    document.getElementById('btn-back').style.display = (round === 2) ? 'none' : 'inline-flex';
+                });
         }else{switchPage('page-login');document.getElementById('btn-back').style.display='none';}
         updateAdminMonitor(users);
     });
