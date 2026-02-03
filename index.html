@@ -146,6 +146,7 @@
         }
         .name-card:active { transform: scale(0.97); }
         .name-card.taken  { opacity: 0.25; filter: grayscale(1); pointer-events: none; cursor: default; }
+        .name-card.wide   { grid-column: 1 / -1; }
 
         /* ============================================================
            Horse Selection Page
@@ -410,7 +411,6 @@
         .rank-badge.bronze { background: rgba(205,127,50,0.18);  border-color: #cd7f32; color: #cd7f32; }
 
         .rank-name  { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-        .rank-prize { font-size: 13px; font-weight: 500; color: var(--gold); }
 
         .lb-reset-btn { display: none; width: 100%; margin-top: 20px; padding: 10px 0; font-size: 14px; }
 
@@ -541,10 +541,10 @@ const horseLibrary = [
     { id:14, trait:"Teasm 潛水員",   stats:{spd:75,sta:75,burst:50,lck:50}, desc:"沒事不回訊，一旦回訊息就是一鳴驚人。" }
 ];
 
-const names = ["Julia","Molly","DON","豪哥","Gimme","Erick","韋志","Juli","Jason","Kris"];
+const names = ["Greg","Julia","Molly","DON","豪哥","Gimme","Erick","韋志","Juli","Jason","Kris"];
 
 // Finish-line emojis indexed 0-based: rank 1 = index 0
-const rankEmojis = ["🥳","😎","😊","😐","🤔","😓","😫","😭","💀","🪦"];
+const rankEmojis = ["🥳","😎","😊","😐","🤔","😓","😫","😭","💀","🪦","👻"];
 
 let myName = localStorage.getItem('race_user') || "";
 const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
@@ -565,9 +565,10 @@ function init() {
 
     // Login grid
     const loginGrid = document.getElementById('login-grid');
-    names.forEach(n => {
+    names.forEach((n, idx) => {
         const d = document.createElement('div');
-        d.className = 'name-card'; d.id = `user-${n}`; d.innerText = n;
+        d.className = 'name-card' + (idx === 0 ? ' wide' : '');
+        d.id = `user-${n}`; d.innerText = n;
         d.onclick = () => {
             myName = n;
             localStorage.setItem('race_user', n);
@@ -1020,15 +1021,8 @@ function showLeaderboard(results) {
                 <div class="rank-badge ${medalClass(i)}">#${i+1}</div>
                 <span class="rank-name">${rankEmojis[i] || ""} ${r.name}</span>
             </div>
-            <span class="rank-prize">${getPrize(i+1)}</span>
          </div>`
     ).join('');
-}
-
-function getPrize(r) {
-    if (r === 1)  return "現金 $2500";
-    if (r <= 5)   return "新光禮卷 $1000";
-    return { 6:"現金 $500", 7:"現金 $400", 8:"現金 $300", 9:"現金 $200", 10:"現金 $100" }[r] || "-";
 }
 
 // =====================================================================
