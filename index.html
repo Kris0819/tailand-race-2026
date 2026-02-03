@@ -196,6 +196,7 @@ const rankEmojis=["🥳","😎","😊","😐","🤔","😓","😫","😭","🥵"
 let myName=localStorage.getItem('race_user')||"";
 const isAdmin=new URLSearchParams(window.location.search).get('admin')==='1';
 let serverOffset=0;
+let currentRound=1;
 db.ref(".info/serverTimeOffset").on("value",s=>{serverOffset=s.val()||0;});
 
 // =====================================================================
@@ -227,13 +228,22 @@ function init(){
 }
 function renderStat(label,val){return`<div class="stat-item"><span class="stat-label">${label}</span><div class="stat-bar"><div class="stat-fill" style="width:${val}%"></div></div></div>`;}
 function logout(){if(myName){db.ref(`users/${myName}`).remove();db.ref(`assignments/${myName}`).remove();}localStorage.removeItem('race_user');myName="";location.reload();}
-
+function updateBackButton(){
+    const backBtn=document.getElementById('btn-back');
+    if(!backBtn) return;
+    if(!myName||isAdmin){backBtn.style.display='none';return;}
+    backBtn.style.display=(currentRound===2)?'none':'inline-flex';
+}
 // =====================================================================
 // Firebase Listeners
 // =====================================================================
 let isRacingNow=false;
 
 function listenFirebase(){
+    db.ref('gameState/currentRound').on('value',rSnap=>{
+        currentRound=rSnap.val()||1;
+        updateBackButton();
+    });
     db.ref('users').on('value',snap=>{
         const u=snap.val();
         if(!u&&myName&&!isAdmin){localStorage.removeItem('race_user');location.reload();return;}
@@ -242,11 +252,7 @@ function listenFirebase(){
         if(myName&&users[myName]){
             if(!isRacingNow)switchPage('page-setup');
             if(!isAdmin)document.getElementById('label-user-name').innerText=myName;
-            db.ref('gameState/currentRound').once('value', rSnap => 
-                {
-                    const round = rSnap.val() || 1;
-                    document.getElementById('btn-back').style.display = (round === 2) ? 'none' : 'inline-flex';
-                });
+                        updateBackButton();
         }else{switchPage('page-login');document.getElementById('btn-back').style.display='none';}
         updateAdminMonitor(users);
     });
