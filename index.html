@@ -319,6 +319,12 @@ function listenFirebase(){
                     document.querySelector('#page-setup .page-heading h2').innerHTML = '🐎 請選擇您的參賽戰馬';
                     if(isAdmin) document.getElementById('admin-start-btn').innerText = '🏁 開始比賽';
                 }
+                // round 2: hide back button to prevent returning to name selection
+                const backBtn = document.getElementById('btn-back');
+                if(backBtn)
+                    if(round === 2) backBtn.style.display = 'none';
+                    else backBtn.style.display = myName ? 'inline-flex' : 'none';
+                
             });
             if(document.getElementById('page-track').classList.contains('active')){
                 switchPage('page-setup');
