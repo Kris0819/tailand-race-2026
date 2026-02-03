@@ -209,6 +209,7 @@ let serverOffset=0;
 let currentRound=1;
 let currentStatus='idle';
 let bananaUses={};
+let lastResetAt=0;
 const FINISH_LINE_WIDTH=36;
 db.ref(".info/serverTimeOffset").on("value",s=>{serverOffset=s.val()||0;});
 
@@ -273,6 +274,20 @@ function dropBanana(){
 let isRacingNow=false;
 
 function listenFirebase(){
+    db.ref('gameState/resetAt').on('value',snap=>{
+        const ts=snap.val();
+        if(!ts||ts===lastResetAt)return;
+        lastResetAt=ts;
+        isRacingNow=false;
+        stopListeningSnapshot();
+        localStorage.removeItem('race_user');
+        myName="";
+        document.getElementById('leaderboard-overlay').style.display='none';
+        document.getElementById('btn-back').style.display='none';
+        document.getElementById('label-user-name').innerText=isAdmin?'ADMIN':'GUEST';
+        switchPage('page-login');
+        updateBananaButton();
+    });
     db.ref('gameState/currentRound').on('value',rSnap=>{
         currentRound=rSnap.val()||1;
         updateBackButton();
@@ -584,7 +599,9 @@ function adminReset(){
     stopListeningSnapshot();
     db.ref('users').remove();
     db.ref('assignments').remove();
-    db.ref('gameState').set({status:'idle'}); // set 而非 update，清掉所有子節點
+    db.ref('gameState/bananaUses').remove();
+    db.ref('gameState/bananaRequests').remove();
+    db.ref('gameState').set({status:'idle',currentRound:1,resetAt:Date.now()+serverOffset}); // set 而非 update，清掉所有子節點
 }
 
 // =====================================================================
