@@ -7,96 +7,428 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
-        :root { 
-            --primary: #ff3e3e; --gold: #ffd700; --track: #222;
-            --success: #00ff88; --danger: #ff0055; --sprint: #ffaa00; --recover: #00d4ff;
+        /* ============================================================
+           shadcn-style Design Tokens
+           ============================================================ */
+        :root {
+            /* Zinc palette (shadcn dark) */
+            --bg-base:      #09090b; /* zinc-950 */
+            --bg-card:      #18181b; /* zinc-900 */
+            --bg-card-hover:#1f1f24; /* zinc-900 hover */
+            --bg-muted:     #27272a; /* zinc-800 */
+            --border:       #3f3f46; /* zinc-700 */
+            --border-hover: #52525b; /* zinc-600 */
+            --text-primary: #f4f4f5; /* zinc-100 */
+            --text-secondary:#a1a1aa;/* zinc-400 */
+            --text-muted:   #71717a; /* zinc-500 */
+
+            /* Brand accents */
+            --gold:         #ffd700;
+            --gold-dim:     rgba(255,215,0,0.12);
+            --danger:       #ef4444; /* red-500 */
+            --danger-dim:   rgba(239,68,68,0.15);
+            --success:      #22c55e; /* green-500 */
+            --success-dim:  rgba(34,197,94,0.12);
+            --recover:      #38bdf8; /* sky-400 */
+            --recover-dim:  rgba(56,189,248,0.15);
+            --sprint:       #fb923c; /* orange-400 */
+
+            /* Radius */
+            --radius-sm:    4px;
+            --radius:       6px;
+            --radius-md:    8px;
+            --radius-lg:    12px;
+            --radius-pill:  9999px;
         }
 
-        body { font-family: 'PingFang TC', sans-serif; background: #0a0a0a; color: white; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
-
-        .btn-ui { border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 0 rgba(0,0,0,0.3); }
-        .btn-ui:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
-
-        /* Header */
-        .header-bar { 
-            background: linear-gradient(180deg, #333 0%, #111 100%); 
-            padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; 
-            height: 60px; border-bottom: 2px solid var(--gold); position: relative; z-index: 1000;
+        /* ============================================================
+           Reset + Base
+           ============================================================ */
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            margin: 0; padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .page { display: none; height: calc(100vh - 60px); width: 100vw; position: absolute; flex-direction: column; overflow-y: auto; }
+        /* ============================================================
+           Header
+           ============================================================ */
+        .header-bar {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px;
+            height: 56px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1000;
+        }
+
+        /* ============================================================
+           Buttons (shadcn style)
+           ============================================================ */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 13px; font-weight: 500;
+            padding: 7px 14px;
+            cursor: pointer;
+            background: var(--bg-muted);
+            color: var(--text-primary);
+            transition: background 0.15s, border-color 0.15s, transform 0.1s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .btn:hover  { background: var(--bg-card-hover); border-color: var(--border-hover); }
+        .btn:active { transform: scale(0.97); }
+
+        .btn-primary {
+            background: var(--gold);
+            color: #000;
+            border-color: var(--gold);
+            font-weight: 600;
+        }
+        .btn-primary:hover { background: #e6c200; border-color: #e6c200; }
+
+        .btn-danger  { background: var(--danger); color: #fff; border-color: var(--danger); }
+        .btn-danger:hover { background: #dc2626; border-color: #dc2626; }
+
+        .btn-ghost   { background: transparent; border-color: transparent; color: var(--text-secondary); }
+        .btn-ghost:hover { background: var(--bg-muted); color: var(--text-primary); border-color: transparent; }
+
+        /* ============================================================
+           Pages
+           ============================================================ */
+        .page {
+            display: none;
+            height: calc(100vh - 56px);
+            width: 100vw;
+            position: absolute;
+            top: 56px;
+            flex-direction: column;
+            overflow-y: auto;
+        }
         .page.active { display: flex; }
-        
-        .login-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 20px; width: 100%; box-sizing: border-box; }
-        .name-card { 
-            background: #222; border: 2px solid #444; border-radius: 12px; padding: 25px 10px;
-            text-align: center; font-size: 20px; font-weight: 800; color: #fff; position: relative;
+
+        /* ============================================================
+           Login Page — Name Cards
+           ============================================================ */
+        .login-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 16px;
+            width: 100%;
         }
-        .name-card.taken { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
-
-        /* 選馬卡片 */
-        .horse-list { padding: 15px; padding-bottom: 120px; }
-        .horse-card { 
-            background: #1a1a1a; border: 2px solid #333; border-radius: 16px; padding: 15px; 
-            margin-bottom: 15px; position: relative; border-left: 6px solid #444; transition: 0.2s;
+        .name-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px 12px;
+            text-align: center;
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s, transform 0.1s;
         }
-        .horse-card.selected { border-color: var(--success); background: #12221a; }
-        .horse-card.occupied { opacity: 0.5; filter: grayscale(0.5); cursor: not-allowed; }
-        .owner-badge { position: absolute; top: 10px; right: 10px; background: var(--primary); color: white; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; z-index: 2; }
+        .name-card:hover {
+            border-color: var(--gold);
+            background: var(--gold-dim);
+            transform: translateY(-1px);
+        }
+        .name-card:active { transform: scale(0.97); }
+        .name-card.taken  { opacity: 0.25; filter: grayscale(1); pointer-events: none; cursor: default; }
 
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
-        .stat-label { font-size: 10px; color: #888; margin-bottom: 2px; }
-        .stat-bar { height: 4px; background: #000; border-radius: 2px; overflow: hidden; }
-        .stat-fill { height: 100%; background: var(--gold); }
-        .horse-desc { font-size: 12px; color: #bbb; font-style: italic; border-top: 1px solid #333; padding-top: 8px; }
+        /* ============================================================
+           Horse Selection Page
+           ============================================================ */
+        .horse-list { padding: 12px 16px 100px; }
 
-        /* 比賽跑道 */
-        #page-track { background: #111; }
-        .track-bg { height: 100%; position: relative; background: #151515; }
+        .horse-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s, transform 0.1s;
+        }
+        .horse-card:hover { border-color: var(--border-hover); background: var(--bg-card-hover); transform: translateY(-1px); }
+        .horse-card:active { transform: scale(0.98); }
+        .horse-card.selected { border-color: var(--gold); background: var(--gold-dim); }
+        .horse-card.occupied { opacity: 0.4; filter: grayscale(0.6); pointer-events: none; cursor: default; }
+        .horse-card.occupied:hover { transform: none; background: var(--bg-card); border-color: var(--border); }
+
+        /* Owner badge — pill outline style */
+        .owner-badge {
+            position: absolute; top: 12px; right: 12px;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            background: var(--danger-dim);
+            padding: 2px 10px;
+            border-radius: var(--radius-pill);
+            font-size: 11px; font-weight: 500;
+            z-index: 2;
+        }
+
+        .horse-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .horse-header .horse-icon { font-size: 26px; }
+        .horse-header .horse-name { font-size: 16px; font-weight: 600; color: var(--gold); }
+
+        /* Stat bars */
+        .stat-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+        .stat-item  { display: flex; flex-direction: column; gap: 4px; }
+        .stat-label { font-size: 11px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.3px; }
+        .stat-bar   { height: 5px; background: var(--bg-muted); border-radius: var(--radius-pill); overflow: hidden; }
+        .stat-fill  { height: 100%; background: var(--gold); border-radius: var(--radius-pill); transition: width 0.3s; }
+
+        .horse-desc {
+            font-size: 12px; color: var(--text-secondary);
+            font-style: italic;
+            border-top: 1px solid var(--border);
+            margin-top: 12px; padding-top: 10px;
+        }
+
+        /* Rule box */
+        .rule-box {
+            margin: 12px 16px 4px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 14px 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+        .rule-box b { color: var(--text-primary); font-weight: 600; }
+        .rule-box .rule-title { color: var(--gold); font-weight: 600; font-size: 13px; margin-bottom: 6px; display: block; }
+
+        /* ============================================================
+           Track Page
+           ============================================================ */
+        #page-track { background: var(--bg-base); top: 0; height: 100vh; }
+        .track-bg   { height: 100%; position: relative; }
         #lanes-render-area { display: flex; flex-direction: column; height: 100%; }
-        .lane { position: relative; border-bottom: 1px solid #252525; flex-grow: 1; display: flex; align-items: center; padding-left: 10px; }
-        .finish-line { position: absolute; right: 0; top: 0; bottom: 0; width: 40px; background: repeating-linear-gradient(45deg, #fff, #fff 10px, #000 10px, #000 20px); border-left: 4px solid var(--gold); z-index: 5; }
 
-        .horse-pawn { position: absolute; left: 0; display: flex; align-items: center; width: 140px; transition: left 0.15s linear; }
-        .horse-visual { font-size: 38px; transform: scaleX(-1); animation: move 0.4s infinite; transition: filter 0.3s; }
-        
-        /* 特效 Class */
-        .effect-sprint { filter: drop-shadow(0 0 15px var(--gold)) scaleX(-1) !important; }
-        .effect-exhausted { filter: drop-shadow(0 0 15px var(--danger)) scaleX(-1) !important; }
-        .effect-slip { animation: slip-shake 0.2s infinite !important; }
+        .lane {
+            position: relative;
+            border-bottom: 1px solid #1a1a1f;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+        }
+        .lane:last-child { border-bottom: none; }
 
-        @keyframes move { 0%, 100% { transform: scaleX(-1) translateY(0); } 50% { transform: scaleX(-1) translateY(-6px); } }
-        @keyframes slip-shake { 
-            0% { transform: scaleX(-1) rotate(0deg); } 
-            25% { transform: scaleX(-1) rotate(20deg) translateY(-2px); }
-            75% { transform: scaleX(-1) rotate(-20deg) translateY(2px); }
+        .finish-line {
+            position: absolute; right: 0; top: 0; bottom: 0; width: 36px;
+            background: repeating-linear-gradient(45deg, #fff, #fff 8px, #1a1a1f 8px, #1a1a1f 16px);
+            border-left: 3px solid var(--gold);
+            z-index: 5;
+        }
+
+        /* Horse pawn */
+        .horse-pawn {
+            position: absolute; left: 0;
+            display: flex; align-items: center;
+            width: 140px;
+            transition: left 0.15s linear;
+        }
+        .horse-visual {
+            font-size: 36px;
+            transform: scaleX(-1);
+            animation: gallop 0.4s infinite;
+            transition: filter 0.25s;
+        }
+
+        .effect-sprint   { filter: drop-shadow(0 0 10px var(--sprint)) scaleX(-1) !important; }
+        .effect-exhausted{ filter: drop-shadow(0 0 8px var(--danger))  scaleX(-1) !important; }
+        .effect-slip     { animation: slip-shake 0.18s infinite !important; }
+
+        @keyframes gallop {
+            0%, 100% { transform: scaleX(-1) translateY(0); }
+            50%      { transform: scaleX(-1) translateY(-5px); }
+        }
+        @keyframes slip-shake {
+            0%   { transform: scaleX(-1) rotate(0deg); }
+            25%  { transform: scaleX(-1) rotate(18deg)  translateY(-2px); }
+            75%  { transform: scaleX(-1) rotate(-18deg) translateY(2px); }
             100% { transform: scaleX(-1) rotate(0deg); }
         }
 
+        /* Speech bubble */
         .speech-bubble {
-            position: absolute; top: -55px; left: 10px; background: white; color: black;
-            padding: 5px 12px; border-radius: 12px; font-size: 13px; font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 20; white-space: nowrap;
+            position: absolute; top: -48px; left: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 4px 10px;
+            border-radius: var(--radius-md);
+            font-size: 12px; font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            z-index: 20; white-space: nowrap;
         }
-        .speech-bubble::after { content: ''; position: absolute; bottom: -8px; left: 15px; border-width: 8px 8px 0; border-style: solid; border-color: white transparent; }
-        .bubble-danger { background: var(--danger); color: white; }
-        .bubble-danger::after { border-color: var(--danger) transparent; }
-        .bubble-recover { background: var(--recover); color: #000; }
-        .bubble-recover::after { border-color: var(--recover) transparent; }
+        .speech-bubble::after {
+            content: ''; position: absolute; bottom: -5px; left: 12px;
+            border-width: 5px 5px 0; border-style: solid;
+            border-color: var(--bg-card) transparent;
+        }
 
-        .stamina-container { width: 50px; height: 4px; background: #000; border-radius: 2px; margin-top: 5px; overflow: hidden; }
-        .stamina-fill { height: 100%; background: var(--success); transition: width 0.3s; }
+        .bubble-danger {
+            background: var(--danger-dim);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        .bubble-danger::after { border-color: var(--danger-dim) transparent; }
 
+        .bubble-recover {
+            background: var(--recover-dim);
+            border-color: var(--recover);
+            color: var(--recover);
+        }
+        .bubble-recover::after { border-color: var(--recover-dim) transparent; }
+
+        .bubble-sprint {
+            background: rgba(251,146,60,0.15);
+            border-color: var(--sprint);
+            color: var(--sprint);
+        }
+        .bubble-sprint::after { border-color: rgba(251,146,60,0.15) transparent; }
+
+        .bubble-finish {
+            background: var(--gold-dim);
+            border-color: var(--gold);
+            color: var(--gold);
+            font-size: 18px;
+        }
+        .bubble-finish::after { border-color: var(--gold-dim) transparent; }
+
+        /* Stamina bar under name */
+        .pawn-info       { margin-left: 8px; }
+        .pawn-name       { font-size: 10px; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.2px; }
+        .stamina-track   { width: 44px; height: 3px; background: var(--bg-muted); border-radius: var(--radius-pill); margin-top: 3px; overflow: hidden; }
+        .stamina-fill    { height: 100%; background: var(--success); border-radius: var(--radius-pill); transition: width 0.25s; }
+        .stamina-fill.low { background: var(--danger); }
+
+        /* ============================================================
+           Countdown Overlay
+           ============================================================ */
         #countdown-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
+            position: fixed; inset: 0;
+            background: rgba(9,9,11,0.88);
             display: none; align-items: center; justify-content: center;
-            z-index: 2000; font-size: 150px; font-weight: 900; color: var(--gold);
+            z-index: 2000;
+            font-size: 140px; font-weight: 700;
+            color: var(--gold);
+            letter-spacing: -4px;
         }
 
-        .admin-monitor-box { background: #1a1a1a; border: 1px solid #333; margin: 15px; padding: 12px; border-radius: 10px; }
-        .player-status-tag { display: inline-block; padding: 3px 10px; border-radius: 5px; font-size: 11px; margin: 3px; background: #222; border: 1px solid #444; }
+        /* ============================================================
+           Admin Monitor Box
+           ============================================================ */
+        .admin-monitor-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            margin: 12px 16px;
+            padding: 12px 14px;
+            border-radius: var(--radius-lg);
+        }
+        .admin-monitor-title { font-size: 11px; font-weight: 600; color: var(--gold); margin-bottom: 8px; letter-spacing: 0.4px; }
+
+        .player-status-tag {
+            display: inline-flex; align-items: center;
+            padding: 3px 10px;
+            border-radius: var(--radius-pill);
+            font-size: 11px; font-weight: 500;
+            margin: 2px 2px;
+            background: var(--bg-muted);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            transition: border-color 0.15s, color 0.15s;
+        }
         .player-status-tag.ready { border-color: var(--success); color: var(--success); }
-        .admin-persistent-ctrl { position: fixed; bottom: 20px; left: 20px; z-index: 9999; display: none; flex-direction: column; gap: 10px; }
+
+        /* Admin floating controls */
+        .admin-persistent-ctrl {
+            position: fixed; bottom: 24px; left: 24px;
+            z-index: 9999; display: none;
+            flex-direction: column; gap: 8px;
+        }
+
+        /* ============================================================
+           Leaderboard Overlay (shadcn modal style)
+           ============================================================ */
+        #leaderboard-overlay {
+            position: fixed; inset: 0;
+            background: rgba(9,9,11,0.85);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: none; align-items: center; justify-content: center;
+        }
+        .leaderboard-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 88%; max-width: 420px;
+            padding: 28px 24px 24px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+        }
+        .leaderboard-title {
+            text-align: center;
+            font-size: 20px; font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+        .leaderboard-title span { color: var(--gold); }
+
+        .rank-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .rank-row:last-of-type { border-bottom: none; }
+        .rank-row-left  { display: flex; align-items: center; gap: 12px; }
+        .rank-badge {
+            width: 28px; height: 28px;
+            border-radius: var(--radius-pill);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700;
+            background: var(--bg-muted); color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+        .rank-badge.gold   { background: rgba(255,215,0,0.18); border-color: var(--gold);  color: var(--gold);  }
+        .rank-badge.silver { background: rgba(192,192,192,0.18); border-color: #c0c0c0; color: #c0c0c0; }
+        .rank-badge.bronze { background: rgba(205,127,50,0.18);  border-color: #cd7f32; color: #cd7f32; }
+
+        .rank-name  { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .rank-prize { font-size: 13px; font-weight: 500; color: var(--gold); }
+
+        .lb-reset-btn { display: none; width: 100%; margin-top: 20px; padding: 10px 0; font-size: 14px; }
+
+        /* ============================================================
+           Page-level heading helpers
+           ============================================================ */
+        .page-heading {
+            text-align: center; padding: 24px 16px 4px;
+        }
+        .page-heading h1 {
+            margin: 0; font-size: 22px; font-weight: 700;
+            color: var(--text-primary); letter-spacing: 2px;
+        }
+        .page-heading h2 {
+            margin: 0; font-size: 18px; font-weight: 600; color: var(--text-primary);
+        }
+        .page-heading h1 .accent, .page-heading h2 .accent { color: var(--gold); }
+        .page-heading p { margin: 6px 0 0; font-size: 13px; color: var(--text-muted); }
     </style>
 </head>
 <body>
@@ -104,41 +436,49 @@
 <audio id="bgm" loop src="https://assets.mixkit.co/music/preview/mixkit-fast-game-action-loop-460.mp3"></audio>
 <div id="countdown-overlay">READY</div>
 
+<!-- Header -->
 <div class="header-bar" id="header">
-    <div id="header-left">
-        <button class="btn-ui" id="btn-back" onclick="logout()" style="background:#444; color:white; padding:8px 15px; display:none;">⬅ 返回選人</button>
+    <div>
+        <button class="btn btn-ghost" id="btn-back" onclick="logout()" style="display:none;">⬅ 返回</button>
     </div>
-    <div id="header-user-info" style="text-align:right;">
-        <div id="label-user-name" style="font-weight:bold; color:var(--gold);">GUEST</div>
-    </div>
+    <div id="label-user-name" style="font-size:13px; font-weight:600; color:var(--gold);">GUEST</div>
 </div>
 
+<!-- ============================================================
+     PAGE: Login
+     ============================================================ -->
 <div id="page-login" class="page active">
     <div id="admin-login-monitor" style="display:none;" class="admin-monitor-box">
-        <div style="font-size:12px; color:var(--gold); margin-bottom:8px;">[ADMIN] 即時選馬進度：</div>
+        <div class="admin-monitor-title">[ADMIN] 即時選馬進度</div>
         <div id="admin-status-grid"></div>
     </div>
-    <div style="text-align:center; padding:20px 0;">
-        <h1 style="color:var(--gold); margin:0; letter-spacing:4px;">AIOT 2026 馬年賽馬獎金賽</h1>
-        <p style="color:#666;">點擊你的名字加入比賽</p>
+    <div class="page-heading">
+        <h1><span class="accent">AIOT</span> 2026 馬年賽馬獎金賽</h1>
+        <p>點擊你的名字加入比賽</p>
     </div>
     <div class="login-grid" id="login-grid"></div>
 </div>
 
+<!-- ============================================================
+     PAGE: Horse Selection
+     ============================================================ -->
 <div id="page-setup" class="page">
-    <div style="text-align:center; padding: 25px 15px 10px;">
-        <h2 style="color:var(--gold); margin:0; font-size:24px;">🐎 請選擇您的參賽戰馬</h2>
-        <div style="font-size:12px; color:#aaa; margin-top:12px; line-height:1.6; background:#1a1a1a; padding:12px; border-radius:10px; text-align:left; border:1px solid #333;">
-            <b style="color:var(--gold);">📊 屬性影響說明：</b><br>
-            • <b>速度：</b>基礎移動速度。速度越快，體力消耗也越快。<br>
-            • <b>體力：</b>影響續航力。數值越高，越不容易進入「爆肝」躺平狀態。<br>
-            • <b>爆發：</b>衝刺時的增益強度。數值越高，觸發衝刺時噴發越遠。<br>
-            • <b>運氣：</b>數值越高，越不容易發生滑倒意外，且觸發衝刺機率越高。
-        </div>
+    <div class="page-heading">
+        <h2>🐎 請選擇您的參賽戰馬</h2>
+    </div>
+    <div class="rule-box">
+        <span class="rule-title">📊 屬性影響說明</span>
+        <b>速度</b> 基礎移動速度。速度越快，體力消耗也越快。<br>
+        <b>體力</b> 影響續航力。數值越高，越不容易進入「爆肝」躺平狀態。<br>
+        <b>爆發</b> 衝刺時的增益強度。數值越高，觸發衝刺時噴發越遠。<br>
+        <b>運氣</b> 數值越高，越不容易發生滑倒意外，且觸發衝刺機率越高。
     </div>
     <div class="horse-list" id="horse-selection-list"></div>
 </div>
 
+<!-- ============================================================
+     PAGE: Track
+     ============================================================ -->
 <div id="page-track" class="page">
     <div class="track-bg">
         <div class="finish-line"></div>
@@ -146,584 +486,546 @@
     </div>
 </div>
 
+<!-- Admin Controls -->
 <div class="admin-persistent-ctrl" id="admin-ctrl">
-    <button class="btn-ui" id="admin-start-btn" onclick="adminStart()" style="background:var(--success); color:black; padding:15px 30px; font-size:18px;">🏁 開始比賽</button>
-    <button class="btn-ui" id="admin-reset-btn" onclick="adminReset()" style="background:var(--danger); color:white; padding:10px 20px;">🔄 重置全場</button>
+    <button class="btn btn-primary" id="admin-start-btn" onclick="adminStart()" style="padding:12px 28px; font-size:15px;">🏁 開始比賽</button>
+    <button class="btn btn-danger"  id="admin-reset-btn"  onclick="adminReset()"  style="padding:8px 18px;">🔄 重置全場</button>
 </div>
 
-<div id="leaderboard-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; display:none; align-items:center; justify-content:center;">
-    <div style="background:white; color:black; width:85%; border-radius:20px; padding:30px; text-align:center;">
-        <h2 style="color:var(--danger);">🏆 排行榜 🏆 </h2>
-        <div id="rankings-list" style="margin:20px 0; font-weight:bold; text-align: left;"></div>
-        <button class="btn-ui" onclick="adminReset()" style="background:#111; color:white; width:100%; padding:15px; display:none;" id="lb-reset-btn">下一輪比賽</button>
+<!-- ============================================================
+     Leaderboard Overlay
+     ============================================================ -->
+<div id="leaderboard-overlay">
+    <div class="leaderboard-card">
+        <div class="leaderboard-title">🏆 <span>排行榜</span> 🏆</div>
+        <div id="rankings-list"></div>
+        <button class="btn btn-ghost lb-reset-btn" id="lb-reset-btn" onclick="adminReset()">下一輪比賽</button>
     </div>
 </div>
 
 <script>
-    // =====================================================================
-    // Firebase 設定
-    // =====================================================================
-    const firebaseConfig = {
-      apiKey: "AIzaSyBHJtwI42b8i6z7zRw6tDgtR4ITSNKWrf8",
-      authDomain: "aiot-d53dc.firebaseapp.com",
-      databaseURL: "https://aiot-d53dc-default-rtdb.firebaseio.com",
-      projectId: "aiot-d53dc",
-      storageBucket: "aiot-d53dc.firebasestorage.app",
-      messagingSenderId: "1021331253049",
-      appId: "1:1021331253049:web:11f0695e8ab64eae0baae8",
-      measurementId: "G-9YDKS70ZE7"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+// =====================================================================
+// Firebase
+// =====================================================================
+const firebaseConfig = {
+    apiKey: "AIzaSyBHJtwI42b8i6z7zRw6tDgtR4ITSNKWrf8",
+    authDomain: "aiot-d53dc.firebaseapp.com",
+    databaseURL: "https://aiot-d53dc-default-rtdb.firebaseio.com",
+    projectId: "aiot-d53dc",
+    storageBucket: "aiot-d53dc.firebasestorage.app",
+    messagingSenderId: "1021331253049",
+    appId: "1:1021331253049:web:11f0695e8ab64eae0baae8",
+    measurementId: "G-9YDKS70ZE7"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-    // =====================================================================
-    // 遊戲數據定義
-    // =====================================================================
-    const horseLibrary = [
-        { id: 0, trait: "薪水小偷", stats: {spd: 60, sta: 95, burst: 40, lck: 70}, desc: "擅長在主管視線外緩步前進，體力深不可測。" },
-        { id: 1, trait: "下班戰神", stats: {spd: 55, sta: 65, burst: 95, lck: 60}, desc: "一旦夕陽西下，體力再低也能爆發衝刺。" },
-        { id: 2, trait: "爆肝王", stats: {spd: 95, sta: 25, burst: 85, lck: 30}, desc: "起步瞬間即巔峰，但爆肝倒數是他的日常。" },
-        { id: 3, trait: "會議戰鬥機", stats: {spd: 75, sta: 60, burst: 60, lck: 80}, desc: "節奏感極強，以穩定的高語速壓制全場。" },
-        { id: 4, trait: "咖啡中毒者", stats: {spd: 80, sta: 45, burst: 75, lck: 55}, desc: "依賴咖啡因提速，沒咖啡時體力掉超快。" },
-        { id: 5, trait: "甩鍋專業戶", stats: {spd: 45, sta: 85, burst: 30, lck: 99}, desc: "拥有神級閃避，幾乎不會滑倒，運氣點滿。" },
-        { id: 6, trait: "加班邊緣人", stats: {spd: 55, sta: 90, burst: 50, lck: 65}, desc: "雖然沒存在感，但體力驚人且跑得異常穩。" },
-        { id: 7, trait: "截稿衝刺", stats: {spd: 40, sta: 70, burst: 99, lck: 40}, desc: "平時都在混，最後關頭衝刺力量無人能及。" },
-        { id: 8, trait: "用嘴做事", stats: {spd: 85, sta: 50, burst: 70, lck: 65}, desc: "用氣勢驅動四肢，爆發力與速度兼具的型男。" },
-        { id: 9, trait: "中庸之道", stats: {spd: 70, sta: 75, burst: 65, lck: 70}, desc: "不求最快，但體力與運氣讓他始終在第一梯隊。" },
-        { id: 10, trait: "通靈王", stats: {spd: 50, sta: 50, burst: 40, lck: 100}, desc: "能預知需求，靠著神級直覺避開所有障礙。" },
-        { id: 11, trait: "簡報大師", stats: {spd: 90, sta: 30, burst: 90, lck: 40}, desc: "畫面很華麗，但續航力極低，沒講完就斷電。" },
-        { id: 12, trait: "Debug王", stats: {spd: 65, sta: 65, burst: 65, lck: 95}, desc: "只要他在，程式碼自動修復，怎麼修的?不知道，運氣就是一切。" },
-        { id: 13, trait: "茶水間守門員", stats: {spd: 40, sta: 100, burst: 20, lck: 80}, desc: "每天準時報到，體力全場最硬，慢慢磨到終點。" },
-        { id: 14, trait: "Teasm 潛水員", stats: {spd: 75, sta: 75, burst: 50, lck: 50}, desc: "沒事不回訊，一旦回訊息就是一鳴驚人。" }
-    ];
+// =====================================================================
+// Data
+// =====================================================================
+const horseLibrary = [
+    { id:0,  trait:"薪水小偷",      stats:{spd:60,sta:95,burst:40,lck:70}, desc:"擅長在主管視線外緩步前進，體力深不可測。" },
+    { id:1,  trait:"下班戰神",       stats:{spd:55,sta:65,burst:95,lck:60}, desc:"一旦夕陽西下，體力再低也能爆發衝刺。" },
+    { id:2,  trait:"爆肝王",         stats:{spd:95,sta:25,burst:85,lck:30}, desc:"起步瞬間即巔峰，但爆肝倒數是他的日常。" },
+    { id:3,  trait:"會議戰鬥機",     stats:{spd:75,sta:60,burst:60,lck:80}, desc:"節奏感極強，以穩定的高語速壓制全場。" },
+    { id:4,  trait:"咖啡中毒者",     stats:{spd:80,sta:45,burst:75,lck:55}, desc:"依賴咖啡因提速，沒咖啡時體力掉超快。" },
+    { id:5,  trait:"甩鍋專業戶",     stats:{spd:45,sta:85,burst:30,lck:99}, desc:"拥有神級閃避，幾乎不會滑倒，運氣點滿。" },
+    { id:6,  trait:"加班邊緣人",     stats:{spd:55,sta:90,burst:50,lck:65}, desc:"雖然沒存在感，但體力驚人且跑得異常穩。" },
+    { id:7,  trait:"截稿衝刺",       stats:{spd:40,sta:70,burst:99,lck:40}, desc:"平時都在混，最後關頭衝刺力量無人能及。" },
+    { id:8,  trait:"用嘴做事",       stats:{spd:85,sta:50,burst:70,lck:65}, desc:"用氣勢驅動四肢，爆發力與速度兼具的型男。" },
+    { id:9,  trait:"中庸之道",       stats:{spd:70,sta:75,burst:65,lck:70}, desc:"不求最快，但體力與運氣讓他始終在第一梯隊。" },
+    { id:10, trait:"通靈王",         stats:{spd:50,sta:50,burst:40,lck:100},desc:"能預知需求，靠著神級直覺避開所有障礙。" },
+    { id:11, trait:"簡報大師",       stats:{spd:90,sta:30,burst:90,lck:40}, desc:"畫面很華麗，但續航力極低，沒講完就斷電。" },
+    { id:12, trait:"Debug王",        stats:{spd:65,sta:65,burst:65,lck:95}, desc:"只要他在，程式碼自動修復，怎麼修的?不知道，運氣就是一切。" },
+    { id:13, trait:"茶水間守門員",   stats:{spd:40,sta:100,burst:20,lck:80},desc:"每天準時報到，體力全場最硬，慢慢磨到終點。" },
+    { id:14, trait:"Teasm 潛水員",   stats:{spd:75,sta:75,burst:50,lck:50}, desc:"沒事不回訊，一旦回訊息就是一鳴驚人。" }
+];
 
-    const names = ["Julia", "Molly", "DON", "豪哥", "Gimme", "Erick", "韋志", "Juli", "Jason", "Kris"];
-    let myName = localStorage.getItem('race_user') || "";
-    const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
-    let serverOffset = 0;
-    const rankEmojis = ["🥳", "😎", "😊", "😐", "🤔", "😓", "😫", "😭", "💀", "🪦"];
+const names = ["Julia","Molly","DON","豪哥","Gimme","Erick","韋志","Juli","Jason","Kris"];
 
-    db.ref(".info/serverTimeOffset").on("value", s => serverOffset = s.val());
+// Finish-line emojis indexed 0-based: rank 1 = index 0
+const rankEmojis = ["🥳","😎","😊","😐","🤔","😓","😫","😭","💀","🪦"];
 
-    // =====================================================================
-    // 初始化：login grid + horse selection cards
-    // =====================================================================
-    function init() {
-        if (isAdmin) {
-            document.getElementById('admin-ctrl').style.display = 'flex';
-            document.getElementById('admin-login-monitor').style.display = 'block';
-            document.getElementById('lb-reset-btn').style.display = 'block';
-            document.getElementById('label-user-name').innerText = "ADMIN";
-        }
+let myName = localStorage.getItem('race_user') || "";
+const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
+let serverOffset = 0;
 
-        // --- Login Grid ---
-        const loginGrid = document.getElementById('login-grid');
-        names.forEach(n => {
-            const d = document.createElement('div');
-            d.className = 'name-card'; d.id = `user-${n}`; d.innerText = n;
-            d.onclick = () => {
-                myName = n;
-                localStorage.setItem('race_user', n);
-                db.ref(`users/${n}`).set(true);
-                document.getElementById('bgm').play();
-            };
-            loginGrid.appendChild(d);
-        });
+db.ref(".info/serverTimeOffset").on("value", s => { serverOffset = s.val() || 0; });
 
-        // --- Horse Selection List ---
-        const setupGrid = document.getElementById('horse-selection-list');
-        horseLibrary.forEach((h, i) => {
-            const d = document.createElement('div');
-            d.className = 'horse-card'; d.id = `slot-${i}`;
-            d.innerHTML = `
-                <div class="owner-badge" id="owner-${i}" style="display:none;"></div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <span style="font-size:30px;">🐎</span>
-                    <div style="font-weight:bold; color:var(--gold); font-size:18px;">${h.trait}</div>
-                </div>
-                <div class="stat-grid">
-                    ${renderStat("速度", h.stats.spd)} ${renderStat("體力", h.stats.sta)}
-                    ${renderStat("爆發", h.stats.burst)} ${renderStat("運氣", h.stats.lck)}
-                </div>
-                <div class="horse-desc">${h.desc}</div>
-            `;
-            d.onclick = () => {
-                if (!myName) return;
-                db.ref('assignments').once('value', snap => {
-                    const a = snap.val() || {};
-                    if (Object.entries(a).some(([p, idx]) => idx === i && p !== myName)) {
-                        alert("慢了！被選走囉！");
-                    } else {
-                        db.ref(`assignments/${myName}`).set(i);
-                    }
-                });
-            };
-            setupGrid.appendChild(d);
-        });
-
-        listenFirebase();
+// =====================================================================
+// Init
+// =====================================================================
+function init() {
+    if (isAdmin) {
+        document.getElementById('admin-ctrl').style.display = 'flex';
+        document.getElementById('admin-login-monitor').style.display = 'block';
+        document.getElementById('lb-reset-btn').style.display = 'inline-flex';
+        document.getElementById('label-user-name').innerText = "ADMIN";
     }
 
-    function renderStat(label, val) {
-        return `<div><div class="stat-label">${label}</div><div class="stat-bar"><div class="stat-fill" style="width:${val}%"></div></div></div>`;
-    }
+    // Login grid
+    const loginGrid = document.getElementById('login-grid');
+    names.forEach(n => {
+        const d = document.createElement('div');
+        d.className = 'name-card'; d.id = `user-${n}`; d.innerText = n;
+        d.onclick = () => {
+            myName = n;
+            localStorage.setItem('race_user', n);
+            db.ref(`users/${n}`).set(true);
+            document.getElementById('bgm').play();
+        };
+        loginGrid.appendChild(d);
+    });
 
-    function logout() {
-        if (myName) { db.ref(`users/${myName}`).remove(); db.ref(`assignments/${myName}`).remove(); }
-        localStorage.removeItem('race_user'); myName = ""; location.reload();
-    }
-
-    // =====================================================================
-    // Firebase Listeners
-    // =====================================================================
-    function listenFirebase() {
-        // --- users ---
-        db.ref('users').on('value', snap => {
-            const u = snap.val();
-            if (!u && myName && !isAdmin) { localStorage.removeItem('race_user'); location.reload(); return; }
-            const users = u || {};
-            names.forEach(n => {
-                const el = document.getElementById(`user-${n}`);
-                users[n] ? el.classList.add('taken') : el.classList.remove('taken');
-            });
-            if (myName && users[myName]) {
-                if (!isRacingNow) switchPage('page-setup'); // 比賽中不切頁，留在跑道上
-                if (!isAdmin) document.getElementById('label-user-name').innerText = myName;
-                document.getElementById('btn-back').style.display = 'block';
-            } else {
-                switchPage('page-login');
-                document.getElementById('btn-back').style.display = 'none';
-            }
-            updateAdminMonitor(users);
-        });
-
-        // --- assignments ---
-        db.ref('assignments').on('value', snap => {
-            const a = snap.val() || {};
-            horseLibrary.forEach((_, i) => {
-                const el = document.getElementById(`slot-${i}`);
-                const badge = document.getElementById(`owner-${i}`);
-                const owner = Object.keys(a).find(k => a[k] === i);
-                el.classList.remove('selected', 'occupied');
-                if (owner) {
-                    badge.style.display = 'block';
-                    badge.innerText = `${owner} 已選`;
-                    if (owner === myName) el.classList.add('selected');
-                    else el.classList.add('occupied');
+    // Horse cards
+    const setupGrid = document.getElementById('horse-selection-list');
+    horseLibrary.forEach((h, i) => {
+        const d = document.createElement('div');
+        d.className = 'horse-card'; d.id = `slot-${i}`;
+        d.innerHTML = `
+            <div class="owner-badge" id="owner-${i}" style="display:none;"></div>
+            <div class="horse-header">
+                <span class="horse-icon">🐎</span>
+                <span class="horse-name">${h.trait}</span>
+            </div>
+            <div class="stat-grid">
+                ${renderStat("速度", h.stats.spd)}
+                ${renderStat("體力", h.stats.sta)}
+                ${renderStat("爆發", h.stats.burst)}
+                ${renderStat("運氣", h.stats.lck)}
+            </div>
+            <div class="horse-desc">${h.desc}</div>
+        `;
+        d.onclick = () => {
+            if (!myName) return;
+            db.ref('assignments').once('value', snap => {
+                const a = snap.val() || {};
+                if (Object.entries(a).some(([p, idx]) => idx === i && p !== myName)) {
+                    alert("慢了！被選走囉！");
                 } else {
-                    badge.style.display = 'none';
+                    db.ref(`assignments/${myName}`).set(i);
                 }
             });
-        });
+        };
+        setupGrid.appendChild(d);
+    });
 
-        // --- gameState/status（只監听 status 字段，避免 snapshot 每次寫入都觸發）---
-        db.ref('gameState/status').on('value', snap => {
-            const status = snap.val();
-            if (status === 'racing') {
-                isRacingNow = true;
-                if (isAdmin) document.getElementById('admin-start-btn').style.display = 'none';
-                // 拉一次完整的 gameState 來拿 raceData（僅觸發一次）
-                db.ref('gameState').once('value', fullSnap => {
-                    const s = fullSnap.val();
-                    if (!s || s.status !== 'racing') return;
-                    switchPage('page-track');
-                    setupTrackLanes(s.raceData);
-                    startListeningSnapshot();
-                });
-            } else if (status === 'finished') {
-                isRacingNow = false;
-                // 拉一次結果
-                db.ref('gameState/results').once('value', rSnap => {
-                    const results = rSnap.val();
-                    if (results) showLeaderboard(results);
-                });
-            } else {
-                // idle / null
-                isRacingNow = false;
-                if (isAdmin) document.getElementById('admin-start-btn').style.display = 'block';
-                document.getElementById('leaderboard-overlay').style.display = 'none';
-                stopListeningSnapshot();
-                if (document.getElementById('page-track').classList.contains('active')) {
-                    setTimeout(() => location.reload(), 500);
-                }
+    listenFirebase();
+}
+
+function renderStat(label, val) {
+    return `<div class="stat-item">
+                <span class="stat-label">${label}</span>
+                <div class="stat-bar"><div class="stat-fill" style="width:${val}%"></div></div>
+            </div>`;
+}
+
+function logout() {
+    if (myName) { db.ref(`users/${myName}`).remove(); db.ref(`assignments/${myName}`).remove(); }
+    localStorage.removeItem('race_user'); myName = ""; location.reload();
+}
+
+// =====================================================================
+// Firebase Listeners
+// =====================================================================
+let isRacingNow = false;
+
+function listenFirebase() {
+    // --- users ---
+    db.ref('users').on('value', snap => {
+        const u = snap.val();
+        if (!u && myName && !isAdmin) { localStorage.removeItem('race_user'); location.reload(); return; }
+        const users = u || {};
+        names.forEach(n => {
+            const el = document.getElementById(`user-${n}`);
+            users[n] ? el.classList.add('taken') : el.classList.remove('taken');
+        });
+        if (myName && users[myName]) {
+            if (!isRacingNow) switchPage('page-setup');
+            if (!isAdmin) document.getElementById('label-user-name').innerText = myName;
+            document.getElementById('btn-back').style.display = 'inline-flex';
+        } else {
+            switchPage('page-login');
+            document.getElementById('btn-back').style.display = 'none';
+        }
+        updateAdminMonitor(users);
+    });
+
+    // --- assignments ---
+    db.ref('assignments').on('value', snap => {
+        const a = snap.val() || {};
+        horseLibrary.forEach((_, i) => {
+            const el    = document.getElementById(`slot-${i}`);
+            const badge = document.getElementById(`owner-${i}`);
+            const owner = Object.keys(a).find(k => a[k] === i);
+            el.classList.remove('selected','occupied');
+            if (owner) {
+                badge.style.display = 'block';
+                badge.innerText = `${owner} 已選`;
+                owner === myName ? el.classList.add('selected') : el.classList.add('occupied');
+            } else { badge.style.display = 'none'; }
+        });
+    });
+
+    // --- gameState / status only ---
+    db.ref('gameState/status').on('value', snap => {
+        const status = snap.val();
+        if (status === 'racing') {
+            isRacingNow = true;
+            if (isAdmin) document.getElementById('admin-start-btn').style.display = 'none';
+            db.ref('gameState').once('value', fullSnap => {
+                const s = fullSnap.val();
+                if (!s || s.status !== 'racing') return;
+                switchPage('page-track');
+                setupTrackLanes(s.raceData);
+                startListeningSnapshot();
+            });
+        } else if (status === 'finished') {
+            isRacingNow = false;
+            db.ref('gameState/results').once('value', rSnap => {
+                const results = rSnap.val();
+                if (results) showLeaderboard(results);
+            });
+        } else {
+            isRacingNow = false;
+            if (isAdmin) document.getElementById('admin-start-btn').style.display = 'inline-flex';
+            document.getElementById('leaderboard-overlay').style.display = 'none';
+            stopListeningSnapshot();
+            if (document.getElementById('page-track').classList.contains('active')) {
+                setTimeout(() => location.reload(), 500);
             }
-        });
-    }
+        }
+    });
+}
 
-    function updateAdminMonitor(users) {
-        if (!isAdmin) return;
-        db.ref('assignments').once('value', snap => {
-            const a = snap.val() || {};
-            const container = document.getElementById('admin-status-grid');
-            container.innerHTML = Object.keys(users).map(name =>
+function updateAdminMonitor(users) {
+    if (!isAdmin) return;
+    db.ref('assignments').once('value', snap => {
+        const a = snap.val() || {};
+        document.getElementById('admin-status-grid').innerHTML =
+            Object.keys(users).map(name =>
                 `<span class="player-status-tag ${a[name] !== undefined ? 'ready' : ''}">${name}: ${a[name] !== undefined ? horseLibrary[a[name]].trait : "未選馬"}</span>`
             ).join('');
+    });
+}
+
+function switchPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.getElementById('header').style.display = (id === 'page-track') ? 'none' : 'flex';
+}
+
+// =====================================================================
+// ADMIN — Game Loop
+// =====================================================================
+let adminLoopTimer = null;
+
+function adminStart() {
+    db.ref('assignments').once('value', snap => {
+        const players = snap.val();
+        if (!players) return alert("無人參賽！");
+
+        const raceData = {};
+        Object.entries(players).forEach(([name, hIdx]) => {
+            const h = horseLibrary[hIdx];
+            const events = [];
+            for (let j = 0; j < 3; j++) {
+                const t    = 8 + (j * 8) + Math.random() * 5;
+                const type = (Math.random() * 100 < h.stats.lck) ? 'burst' : 'slip';
+                events.push({ t, type });
+            }
+            raceData[name] = { hIdx, events };
         });
-    }
 
-    function switchPage(id) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.getElementById('header').style.display = (id === 'page-track') ? 'none' : 'flex';
-    }
+        const startTime = Date.now() + serverOffset + 4000;
+        db.ref('gameState').set({ status: 'racing', startTime, raceData });
+        startAdminGameLoop(startTime, raceData);
+    });
+}
 
-    // =====================================================================
-    // ADMIN：生成隨機事件 + 啟動權威性遊戲迴圈
-    // =====================================================================
-    let adminLoopTimer = null; // setInterval handle
+function startAdminGameLoop(startTime, raceData) {
+    if (adminLoopTimer) clearInterval(adminLoopTimer);
 
-    function adminStart() {
-        db.ref('assignments').once('value', snap => {
-            const players = snap.val();
-            if (!players) return alert("無人參賽！");
+    const runners = Object.entries(raceData).map(([name, data]) => ({
+        name,
+        stats: horseLibrary[data.hIdx].stats,
+        events: data.events,
+        progress: 0,
+        stamina: 100,
+        isRecovering: false,
+        recoveryEndTime: 0,
+        finished: false,
+        finishTime: null,
+        finishRank: null,        // ← 完成時的名次（1-based）
+        activeEffect: null
+    }));
 
-            // 為每位選手生成固定的隨機事件序列（時刻 + 類型）
-            // 這些事件寫進 gameState，所有端都看到同一份
-            const raceData = {};
-            Object.entries(players).forEach(([name, hIdx]) => {
-                const h = horseLibrary[hIdx];
-                const events = [];
-                for (let j = 0; j < 3; j++) {
-                    const t = 8 + (j * 8) + Math.random() * 5;
-                    // 用運氣決定是衝刺還是滑倒
-                    const type = (Math.random() * 100 < h.stats.lck) ? 'burst' : 'slip';
-                    events.push({ t, type });
+    let lastElapsed = -999;
+    let finishedCount = 0;       // ← 累計已完成人數
+
+    adminLoopTimer = setInterval(() => {
+        const now     = Date.now() + serverOffset;
+        const elapsed = (now - startTime) / 1000;
+
+        if (elapsed < 0) { lastElapsed = elapsed; return; }
+
+        const dt = (lastElapsed < 0) ? 0.1 : (elapsed - lastElapsed);
+        lastElapsed = elapsed;
+
+        runners.forEach(r => {
+            if (r.finished) return;
+
+            // --- 恢復中 ---
+            if (r.isRecovering) {
+                r.activeEffect = 'recovering';
+                if (elapsed >= r.recoveryEndTime) {
+                    r.isRecovering = false;
+                    r.stamina      = 100;
+                    r.activeEffect = null;
                 }
-                raceData[name] = { hIdx, events };
-            });
-
-            // startTime 設為 server 時間 + 4秒（倒數）
-            const startTime = Date.now() + serverOffset + 4000;
-
-            db.ref('gameState').set({
-                status: 'racing',
-                startTime,
-                raceData
-            });
-
-            // 啟動權威性遊戲迴圈（只在 admin 端跑）
-            startAdminGameLoop(startTime, raceData);
-        });
-    }
-
-    /**
-     * Admin 端的遊戲迴圈。
-     * 每 100ms 計算一次所有選手的最新進度，
-     * 然後將快照寫進 Firebase → 所有 client 只需從快照渲染。
-     */
-    function startAdminGameLoop(startTime, raceData) {
-        if (adminLoopTimer) clearInterval(adminLoopTimer);
-
-        // 初始化每個選手的狀態（這份數據僅存活在 admin 內存裡）
-        const runners = Object.entries(raceData).map(([name, data]) => ({
-            name,
-            stats: horseLibrary[data.hIdx].stats,
-            events: data.events,
-            progress: 0,
-            stamina: 100,
-            isRecovering: false,
-            recoveryEndTime: 0,
-            finished: false,
-            finishTime: null,
-            // 當前活動的事件狀態（用於傳給 client 顯示氣泡/特效）
-            activeEffect: null   // null | 'burst' | 'slip' | 'exhausted' | 'recovering'
-        }));
-
-        let lastElapsed = -999; // 上一次計算的 elapsed（用於計算 dt）
-
-        adminLoopTimer = setInterval(() => {
-            const now = Date.now() + serverOffset;
-            const elapsed = (now - startTime) / 1000;
-
-            // 倒數階段不計算進度
-            if (elapsed < 0) {
-                // 仍在倒數，不寫 snapshot（client 自己根據 startTime 顯示倒數）
-                lastElapsed = elapsed;
                 return;
             }
 
-            // 計算 dt（從上次迴圈經過的秒數）
-            // 第一幀進入正式比賽時，dt 從 0 開始
-            const dt = (lastElapsed < 0) ? 0.1 : (elapsed - lastElapsed);
-            lastElapsed = elapsed;
+            // --- 計算 ---
+            let spd   = (r.stats.spd / 100) * 0.035;
+            let drain = (1.5 - r.stats.sta / 100) * 2.5;
+            r.activeEffect = null;
 
-            let allFinished = true;
-
-            runners.forEach(r => {
-                if (r.finished) return;
-                allFinished = false;
-
-                // --- 恢復中（爆肝躺平）---
-                if (r.isRecovering) {
-                    r.activeEffect = 'recovering';
-                    if (elapsed >= r.recoveryEndTime) {
-                        // 恢復完成
-                        r.isRecovering = false;
-                        r.stamina = 100;
-                        r.activeEffect = null;
+            r.events.forEach(ev => {
+                if (elapsed >= ev.t && elapsed <= ev.t + 1.5) {
+                    if (ev.type === 'burst') {
+                        spd   *= (1.5 + r.stats.burst / 100);
+                        drain *= 5;
+                        r.activeEffect = 'burst';
+                    } else {
+                        r.progress     = Math.max(0, r.progress - 0.012 * dt);
+                        r.activeEffect = 'slip';
                     }
-                    return; // 恢復中不移動
-                }
-
-                // --- 計算速度與體力消耗 ---
-                let spd = (r.stats.spd / 100) * 0.035;
-                let drain = (1.5 - r.stats.sta / 100) * 2.5;
-                r.activeEffect = null;
-
-                // 檢查是否有活動事件
-                r.events.forEach(ev => {
-                    if (elapsed >= ev.t && elapsed <= ev.t + 1.5) {
-                        if (ev.type === 'burst') {
-                            spd *= (1.5 + r.stats.burst / 100);
-                            drain *= 5;
-                            r.activeEffect = 'burst';
-                        } else {
-                            // 滑倒：後退一點
-                            r.progress = Math.max(0, r.progress - 0.012 * dt);
-                            r.activeEffect = 'slip';
-                        }
-                    }
-                });
-
-                // 移動
-                r.progress += spd * dt;
-                r.stamina = Math.max(0, r.stamina - drain * dt);
-
-                // 體力耗盡 → 進入爆肝恢復
-                if (r.stamina <= 0) {
-                    r.isRecovering = true;
-                    r.recoveryEndTime = elapsed + 5;
-                    r.activeEffect = 'exhausted';
-                }
-
-                // 到達終點
-                if (r.progress >= 1) {
-                    r.progress = 1;
-                    r.finished = true;
-                    r.finishTime = elapsed;
-                    r.activeEffect = 'finished';
                 }
             });
 
-            // --- 將快照寫入 Firebase ---
-            const snapshot = {};
-            runners.forEach(r => {
-                snapshot[r.name] = {
-                    progress: r.progress,
-                    stamina: r.stamina,
-                    activeEffect: r.activeEffect,
-                    isRecovering: r.isRecovering,
-                    recoveryEndTime: r.recoveryEndTime,
-                    finished: r.finished,
-                    finishTime: r.finishTime
-                };
-            });
+            r.progress += spd * dt;
+            r.stamina   = Math.max(0, r.stamina - drain * dt);
 
-            db.ref('gameState/snapshot').set(snapshot);
-
-            // --- 全部跑完 → 結束比賽 ---
-            if (runners.every(r => r.finished)) {
-                clearInterval(adminLoopTimer);
-                adminLoopTimer = null;
-
-                // 等一秒讓最後的快照傳播，然後寫入結果
-                setTimeout(() => {
-                    const sorted = [...runners].sort((a, b) => a.finishTime - b.finishTime);
-                    const results = sorted.map((r, i) => ({
-                        name: r.name,
-                        finishTime: r.finishTime,
-                        rank: i + 1
-                    }));
-                    db.ref('gameState').update({ status: 'finished', results });
-                }, 1000);
+            // 體力耗盡
+            if (r.stamina <= 0) {
+                r.isRecovering      = true;
+                r.recoveryEndTime   = elapsed + 5;
+                r.activeEffect      = 'exhausted';
             }
-        }, 100); // 每 100ms 跑一次
-    }
 
-    function stopAdminGameLoop() {
-        if (adminLoopTimer) { clearInterval(adminLoopTimer); adminLoopTimer = null; }
-    }
+            // 到達終點 → 記錄名次
+            if (r.progress >= 1) {
+                r.progress     = 1;
+                r.finished     = true;
+                r.finishTime   = elapsed;
+                finishedCount++;
+                r.finishRank   = finishedCount;   // ← 幾號完成就幾名
+                r.activeEffect = 'finished';
+            }
+        });
 
-    function adminReset() {
-        stopAdminGameLoop();
-        stopListeningSnapshot();
-        db.ref('users').remove();
-        db.ref('assignments').remove();
-        db.ref('gameState').set({ status: 'idle' });
-    }
+        // --- 寫快照 ---
+        const snapshot = {};
+        runners.forEach(r => {
+            snapshot[r.name] = {
+                progress:            r.progress,
+                stamina:             r.stamina,
+                activeEffect:        r.activeEffect,
+                isRecovering:        r.isRecovering,
+                recoveryEndTime:     r.recoveryEndTime,
+                recoverySecondsLeft: r.isRecovering ? Math.max(0, Math.ceil(r.recoveryEndTime - elapsed)) : 0,
+                finished:            r.finished,
+                finishTime:          r.finishTime,
+                finishRank:          r.finishRank    // ← 傳給 client
+            };
+        });
+        db.ref('gameState/snapshot').set(snapshot);
 
-    // =====================================================================
-    // CLIENT：監听 snapshot → 渲染跑道
-    // =====================================================================
-    let snapshotListener = null;
-    let trackSetupDone = false;
-    let playerOrder = []; // 保持渲染顺序固定
-    let isRacingNow = false; // 比賽進行中 flag，防止 users listener 亂切頁
+        // --- 全部跑完 ---
+        if (runners.every(r => r.finished)) {
+            clearInterval(adminLoopTimer);
+            adminLoopTimer = null;
+            setTimeout(() => {
+                const sorted  = [...runners].sort((a, b) => a.finishTime - b.finishTime);
+                const results = sorted.map((r, i) => ({ name: r.name, finishTime: r.finishTime, rank: i + 1 }));
+                db.ref('gameState').update({ status: 'finished', results });
+            }, 1200);
+        }
+    }, 100);
+}
 
-    /**
-     * 第一次進入跑道頁時，根據 raceData 建立 lane DOM
-     */
-    function setupTrackLanes(raceData) {
-        if (trackSetupDone) return;
-        trackSetupDone = true;
-        playerOrder = Object.keys(raceData);
+function stopAdminGameLoop() { if (adminLoopTimer) { clearInterval(adminLoopTimer); adminLoopTimer = null; } }
 
-        const renderArea = document.getElementById('lanes-render-area');
-        renderArea.innerHTML = "";
+function adminReset() {
+    stopAdminGameLoop();
+    stopListeningSnapshot();
+    db.ref('users').remove();
+    db.ref('assignments').remove();
+    db.ref('gameState').set({ status: 'idle' });
+}
 
-        playerOrder.forEach((name, idx) => {
-            const div = document.createElement('div');
-            div.className = 'lane';
-            div.innerHTML = `
-                <div class="horse-pawn" id="pawn-${idx}">
-                    <div id="bubble-${idx}"></div>
-                    <div class="horse-visual" id="vis-${idx}">🐎</div>
-                    <div style="margin-left:10px;">
-                        <div style="font-size:10px; font-weight:bold;">${name}</div>
-                        <div class="stamina-container"><div class="stamina-fill" id="stam-${idx}" style="width:100%"></div></div>
-                    </div>
+// =====================================================================
+// CLIENT — Snapshot Renderer
+// =====================================================================
+let snapshotListener = null;
+let trackSetupDone   = false;
+let playerOrder      = [];
+
+function setupTrackLanes(raceData) {
+    if (trackSetupDone) return;
+    trackSetupDone = true;
+    playerOrder = Object.keys(raceData);
+
+    const area = document.getElementById('lanes-render-area');
+    area.innerHTML = "";
+
+    playerOrder.forEach((name, idx) => {
+        const div = document.createElement('div');
+        div.className = 'lane';
+        div.innerHTML = `
+            <div class="horse-pawn" id="pawn-${idx}">
+                <div id="bubble-${idx}"></div>
+                <div class="horse-visual" id="vis-${idx}">🐎</div>
+                <div class="pawn-info">
+                    <div class="pawn-name">${name}</div>
+                    <div class="stamina-track"><div class="stamina-fill" id="stam-${idx}" style="width:100%"></div></div>
                 </div>
-            `;
-            renderArea.appendChild(div);
-        });
-    }
+            </div>`;
+        area.appendChild(div);
+    });
+}
 
-    /**
-     * 開始監听 gameState/snapshot，收到新快照就直接套用到 DOM
-     */
-    function startListeningSnapshot() {
-        if (snapshotListener) return; // 已經在監听
+function startListeningSnapshot() {
+    if (snapshotListener) return;
 
-        // 先處理倒數（根據 startTime）
-        db.ref('gameState/startTime').once('value', snap => {
-            const startTime = snap.val();
-            if (startTime) handleCountdown(startTime);
-        });
+    db.ref('gameState/startTime').once('value', snap => {
+        if (snap.val()) handleCountdown(snap.val());
+    });
 
-        snapshotListener = db.ref('gameState/snapshot').on('value', snap => {
-            const snapshot = snap.val();
-            if (!snapshot) return;
-            renderFromSnapshot(snapshot);
-        });
-    }
+    snapshotListener = db.ref('gameState/snapshot').on('value', snap => {
+        const snapshot = snap.val();
+        if (snapshot) renderFromSnapshot(snapshot);
+    });
+}
 
-    function stopListeningSnapshot() {
-        if (snapshotListener) {
-            db.ref('gameState/snapshot').off('value', snapshotListener);
-            snapshotListener = null;
+function stopListeningSnapshot() {
+    if (snapshotListener) { db.ref('gameState/snapshot').off('value', snapshotListener); snapshotListener = null; }
+    trackSetupDone = false;
+    playerOrder    = [];
+}
+
+// Countdown (client-local, cosmetic only)
+function handleCountdown(startTime) {
+    (function tick() {
+        const rem = (startTime - (Date.now() + serverOffset)) / 1000;
+        if (rem > 0) {
+            const ov = document.getElementById('countdown-overlay');
+            ov.style.display = 'flex';
+            ov.innerText = rem > 3 ? "READY" : Math.ceil(rem);
+            requestAnimationFrame(tick);
+        } else {
+            document.getElementById('countdown-overlay').style.display = 'none';
         }
-        trackSetupDone = false;
-        playerOrder = [];
-    }
+    })();
+}
 
-    /**
-     * 倒數倒計時顯示（client 端根據 startTime 自己算，不影響比賽進度）
-     */
-    function handleCountdown(startTime) {
-        function tick() {
-            const now = Date.now() + serverOffset;
-            const remaining = (startTime - now) / 1000;
-            if (remaining > 0) {
-                const overlay = document.getElementById('countdown-overlay');
-                overlay.style.display = 'flex';
-                overlay.innerText = remaining > 3 ? "READY" : Math.ceil(remaining);
-                requestAnimationFrame(tick);
-            } else {
-                document.getElementById('countdown-overlay').style.display = 'none';
-            }
+// =====================================================================
+// Core renderer — called every time a new snapshot arrives
+// =====================================================================
+function renderFromSnapshot(snapshot) {
+    const area = document.getElementById('lanes-render-area');
+    if (!area) return;
+    const finishLineX = area.offsetWidth - 140;
+
+    playerOrder.forEach((name, i) => {
+        const data = snapshot[name];
+        if (!data) return;
+
+        const pawn     = document.getElementById(`pawn-${i}`);
+        const vis      = document.getElementById(`vis-${i}`);
+        const bub      = document.getElementById(`bubble-${i}`);
+        const stamFill = document.getElementById(`stam-${i}`);
+        if (!pawn || !vis || !bub || !stamFill) return;
+
+        // Position
+        pawn.style.left = (data.progress * finishLineX) + "px";
+
+        // Stamina bar + colour
+        stamFill.style.width = data.stamina + "%";
+        stamFill.classList.toggle('low', data.stamina < 25);
+
+        // Reset visual classes
+        vis.className  = "horse-visual";
+        bub.className  = "";
+        bub.innerText  = "";
+
+        switch (data.activeEffect) {
+            // ── 衝刺 ──
+            case 'burst':
+                vis.classList.add('effect-sprint');
+                bub.className  = "speech-bubble bubble-sprint";
+                bub.innerText  = "🔥 衝刺！";
+                break;
+
+            // ── 滑倒 ──
+            case 'slip':
+                vis.classList.add('effect-slip');
+                bub.className  = "speech-bubble bubble-danger";
+                bub.innerText  = "⛸️ 滑倒！";
+                break;
+
+            // ── 體力耗盡（觸發那一幀）──
+            case 'exhausted':
+                vis.classList.add('effect-exhausted');
+                bub.className  = "speech-bubble bubble-danger";
+                bub.innerText  = "😵 已爆肝！";
+                break;
+
+            // ── 躺平恢復中 + 倒數秒數 ──
+            case 'recovering':
+                vis.classList.add('effect-exhausted');
+                bub.className  = "speech-bubble bubble-recover";
+                bub.innerText  = `🩹 躺平中 ${data.recoverySecondsLeft}s`;
+                break;
+
+            // ── 抵達終點：根據名次顯示對應表情 ──
+            case 'finished':
+                const emoji = rankEmojis[(data.finishRank || 1) - 1] || "🏁";
+                bub.className  = "speech-bubble bubble-finish";
+                bub.innerText  = emoji;
+                break;
         }
-        tick();
-    }
+    });
+}
 
-    /**
-     * 從快照數據直接更新 DOM（這是唯一影響畫面的來源）
-     */
-    function renderFromSnapshot(snapshot) {
-        const renderArea = document.getElementById('lanes-render-area');
-        if (!renderArea) return;
-        const finishLineX = renderArea.offsetWidth - 140;
+// =====================================================================
+// Leaderboard
+// =====================================================================
+function showLeaderboard(results) {
+    document.getElementById('leaderboard-overlay').style.display = 'flex';
 
-        playerOrder.forEach((name, i) => {
-            const data = snapshot[name];
-            if (!data) return;
+    const medalClass = i => i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
 
-            const pawn = document.getElementById(`pawn-${i}`);
-            const vis = document.getElementById(`vis-${i}`);
-            const bub = document.getElementById(`bubble-${i}`);
-            const stamFill = document.getElementById(`stam-${i}`);
-            if (!pawn || !vis || !bub || !stamFill) return;
+    document.getElementById('rankings-list').innerHTML = results.map((r, i) =>
+        `<div class="rank-row">
+            <div class="rank-row-left">
+                <div class="rank-badge ${medalClass(i)}">#${i+1}</div>
+                <span class="rank-name">${rankEmojis[i] || ""} ${r.name}</span>
+            </div>
+            <span class="rank-prize">${getPrize(i+1)}</span>
+         </div>`
+    ).join('');
+}
 
-            // --- 位置 ---
-            pawn.style.left = (data.progress * finishLineX) + "px";
+function getPrize(r) {
+    if (r === 1)  return "現金 $2500";
+    if (r <= 5)   return "新光禮卷 $1000";
+    return { 6:"現金 $500", 7:"現金 $400", 8:"現金 $300", 9:"現金 $200", 10:"現金 $100" }[r] || "-";
+}
 
-            // --- 體力條 ---
-            stamFill.style.width = data.stamina + "%";
-
-            // --- 視覺特效 + 氣泡（根據 activeEffect）---
-            vis.className = "horse-visual";
-            bub.className = "";
-            bub.innerText = "";
-
-            switch (data.activeEffect) {
-                case 'burst':
-                    vis.classList.add('effect-sprint');
-                    bub.className = "speech-bubble";
-                    bub.innerText = "🔥 衝刺！";
-                    break;
-                case 'slip':
-                    vis.classList.add('effect-slip');
-                    bub.className = "speech-bubble bubble-danger";
-                    bub.innerText = "⛸️ 滑倒！";
-                    break;
-                case 'exhausted':
-                    vis.classList.add('effect-exhausted');
-                    bub.className = "speech-bubble bubble-danger";
-                    bub.innerText = "😵 已爆肝...";
-                    break;
-                case 'recovering':
-                    vis.classList.add('effect-exhausted');
-                    // 計算剩餘恢復時間
-                    // recoveryEndTime 是 elapsed 單位，我們無法在此精確算出，
-                    // 所以用一個通用訊息
-                    bub.className = "speech-bubble bubble-recover";
-                    bub.innerText = "🩹 躺平中...";
-                    break;
-                case 'finished':
-                    bub.className = "speech-bubble";
-                    // 找到這個人的排名
-                    const finishedCount = Object.values(snapshot).filter(s => s.finished).length;
-                    // 排名需要從 results 拿，這裡先顯示 🏁
-                    bub.innerText = "🏁";
-                    break;
-                default:
-                    // 無特效，清除
-                    break;
-            }
-        });
-    }
-
-    /**
-     * 比賽結束 → 展示榜（由 gameState.status === 'finished' 觸發）
-     */
-    function showLeaderboard(results) {
-        // results 是 admin 寫進來的陣列，已經按名次排好
-        document.getElementById('leaderboard-overlay').style.display = 'flex';
-        document.getElementById('rankings-list').innerHTML = results.map((r, i) =>
-            `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #eee;">
-                <span>${rankEmojis[i] || ""} #${i + 1} ${r.name}</span>
-                <span style="color:var(--primary)">${getPrize(i + 1)}</span>
-            </div>`
-        ).join('');
-    }
-
-    function getPrize(r) {
-        return r === 1 ? "現金 $2500" : (r <= 5 ? "新光禮卷 $1000 " : ({ 6: "現金 $500", 7: "現金 $400", 8: "現金 $300", 9: "現金 $200", 10: "現金 $100" }[r] || "-"));
-    }
-
-    // =====================================================================
-    // 啟動
-    // =====================================================================
-    init();
+// =====================================================================
+init();
 </script>
 </body>
 </html>
