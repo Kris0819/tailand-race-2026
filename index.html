@@ -16,6 +16,7 @@
             --success:#22c55e;--success-dim:rgba(34,197,94,0.12);
             --recover:#38bdf8;--recover-dim:rgba(56,189,248,0.15);
             --sprint:#fb923c;
+            --horse-size:36px;
             --radius-sm:4px;--radius:6px;--radius-md:8px;--radius-lg:12px;--radius-pill:9999px;
         }
         *,*::before,*::after{box-sizing:border-box;}
@@ -65,7 +66,7 @@
         .lane:last-child{border-bottom:none;}
         .finish-line{position:absolute;right:0;top:0;bottom:0;width:36px;background:repeating-linear-gradient(45deg,#fff,#fff 8px,#1a1a1f 8px,#1a1a1f 16px);border-left:3px solid var(--gold);z-index:5;}
         .horse-pawn{position:absolute;left:0;display:flex;align-items:center;width:140px;transition:left 0.15s linear;}
-        .horse-visual{font-size:36px;transform:scaleX(-1);animation:gallop 0.4s infinite;transition:filter 0.25s;}
+        .horse-visual{font-size:var(--horse-size);transform:scaleX(-1);animation:gallop 0.4s infinite;transition:filter 0.25s;}
         .effect-sprint{filter:drop-shadow(0 0 10px var(--sprint)) scaleX(-1) !important;}
         .effect-exhausted{filter:drop-shadow(0 0 8px var(--danger)) scaleX(-1) !important;}
         .effect-slip{animation:slip-shake 0.18s infinite !important;}
@@ -92,6 +93,10 @@
         .player-status-tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:var(--radius-pill);font-size:11px;font-weight:500;margin:2px;background:var(--bg-muted);border:1px solid var(--border);color:var(--text-muted);transition:border-color 0.15s,color 0.15s;}
         .player-status-tag.ready{border-color:var(--success);color:var(--success);}
         .admin-persistent-ctrl{position:fixed;bottom:24px;left:24px;z-index:9999;display:none;flex-direction:column;gap:8px;}
+        .player-ctrl{position:fixed;bottom:24px;right:24px;z-index:9999;display:none;flex-direction:column;gap:8px;}
+        .btn-warn{background:#f59e0b;color:#111827;border-color:#f59e0b;font-weight:600;}
+        .btn-warn:hover{background:#d97706;border-color:#d97706;}
+        .btn[disabled]{opacity:0.45;cursor:default;transform:none;}
         #leaderboard-overlay{position:fixed;inset:0;background:rgba(9,9,11,0.85);backdrop-filter:blur(4px);z-index:10000;display:none;align-items:center;justify-content:center;}
         .leaderboard-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:88%;max-width:420px;padding:28px 24px 24px;box-shadow:0 16px 40px rgba(0,0,0,0.4);}
         .leaderboard-title{text-align:center;font-size:20px;font-weight:700;color:var(--text-primary);margin-bottom:4px;}
@@ -113,6 +118,8 @@
         .page-heading h2{margin:0;font-size:18px;font-weight:600;color:var(--text-primary);}
         .page-heading h1 .accent,.page-heading h2 .accent{color:var(--gold);}
         .page-heading p{margin:6px 0 0;font-size:13px;color:var(--text-muted);}
+        .banana-layer{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;}
+        .banana{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:20px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));}
     </style>
 </head>
 <body>
@@ -156,6 +163,9 @@
     <button class="btn btn-primary" id="admin-start-btn" onclick="adminStart()" style="padding:12px 28px;font-size:15px;">🏁 開始比賽</button>
     <button class="btn btn-danger" id="admin-reset-btn" onclick="adminReset()" style="padding:8px 18px;">🔄 重置全場</button>
 </div>
+<div class="player-ctrl" id="player-ctrl">
+    <button class="btn btn-warn" id="banana-btn" onclick="dropBanana()">🍌 丟香蕉皮 (1/1)</button>
+</div>
 <div id="leaderboard-overlay">
     <div class="leaderboard-card">
         <div class="leaderboard-title">🏆 <span>排行榜</span> 🏆</div>
@@ -197,6 +207,10 @@ let myName=localStorage.getItem('race_user')||"";
 const isAdmin=new URLSearchParams(window.location.search).get('admin')==='1';
 let serverOffset=0;
 let currentRound=1;
+let currentStatus='idle';
+let bananaUses={};
+let lastResetAt=0;
+const FINISH_LINE_WIDTH=36;
 db.ref(".info/serverTimeOffset").on("value",s=>{serverOffset=s.val()||0;});
 
 // =====================================================================
@@ -234,15 +248,57 @@ function updateBackButton(){
     if(!myName||isAdmin){backBtn.style.display='none';return;}
     backBtn.style.display=(currentRound===2)?'none':'inline-flex';
 }
+function updateBananaButton(){
+    const ctrl=document.getElementById('player-ctrl');
+    const btn=document.getElementById('banana-btn');
+    if(!ctrl||!btn)return;
+    const isRound2=currentRound===2;
+    const canShow=!isAdmin&&!!myName&&isRound2&&currentStatus==='racing';
+    ctrl.style.display=canShow?'flex':'none';
+    if(!canShow)return;
+    const used=!!bananaUses[myName];
+    btn.disabled=used;
+    btn.innerText=`🍌 丟香蕉皮 (${used?0:1}/1)`;
+}
+function dropBanana(){
+    if(!myName||isAdmin)return;
+    if(currentRound!==2||currentStatus!=='racing')return;
+    if(bananaUses[myName])return;
+    db.ref(`gameState/bananaUses/${myName}`).set(true);
+    db.ref('gameState/bananaRequests').push({by:myName,at:Date.now()+serverOffset});
+    updateBananaButton();
+}
+function forceLocalReset(){
+    isRacingNow=false;
+    stopListeningSnapshot();
+    localStorage.removeItem('race_user');
+    myName="";
+    document.getElementById('leaderboard-overlay').style.display='none';
+    document.getElementById('btn-back').style.display='none';
+    document.getElementById('label-user-name').innerText=isAdmin?'ADMIN':'GUEST';
+    switchPage('page-login');
+    updateBananaButton();
+}
 // =====================================================================
 // Firebase Listeners
 // =====================================================================
 let isRacingNow=false;
 
 function listenFirebase(){
+    db.ref('gameState/resetAt').on('value',snap=>{
+        const ts=snap.val();
+        if(!ts||ts===lastResetAt)return;
+        lastResetAt=ts;
+        forceLocalReset();
+    });
     db.ref('gameState/currentRound').on('value',rSnap=>{
         currentRound=rSnap.val()||1;
         updateBackButton();
+        updateBananaButton();
+    });
+    db.ref('gameState/bananaUses').on('value',snap=>{
+        bananaUses=snap.val()||{};
+        updateBananaButton();
     });
     db.ref('users').on('value',snap=>{
         const u=snap.val();
@@ -270,6 +326,7 @@ function listenFirebase(){
     // --- gameState/status ---
     db.ref('gameState/status').on('value',snap=>{
         const status=snap.val();
+        currentStatus=status||'idle';
         if(status==='racing'){
             isRacingNow=true;
             if(isAdmin)document.getElementById('admin-start-btn').style.display='none';
@@ -279,6 +336,7 @@ function listenFirebase(){
                 switchPage('page-track');
                 setupTrackLanes(s.raceData);
                 startListeningSnapshot();
+                updateBananaButton();
             });
         } else if(status==='round1Done'){
             // 第一輪結束 → 顯示第一輪榜單（榜單是 overlay，但先把跑道頁切掉）
@@ -319,6 +377,7 @@ function listenFirebase(){
             document.getElementById('leaderboard-overlay').style.display='none';
             stopListeningSnapshot();
             switchPage('page-setup');
+            updateBananaButton();
             // 讀 currentRound 來判斷標題
             db.ref('gameState/currentRound').once('value', rSnap => {
                 const round = rSnap.val() || 1;
@@ -334,6 +393,7 @@ function listenFirebase(){
                 if(backBtn)
                     if(round === 2) backBtn.style.display = 'none';
                     else backBtn.style.display = myName ? 'inline-flex' : 'none';
+                updateBananaButton();
                 
             });
             if(document.getElementById('page-track').classList.contains('active')){
@@ -359,6 +419,8 @@ function switchPage(id){
 // ADMIN — Game Loop
 // =====================================================================
 let adminLoopTimer=null;
+let bananaRequestQueue=[];
+let bananaRequestListener=null;
 
 function adminStart(){
     // 讀當前 round（可能不存在 = 第一輪）
@@ -393,10 +455,19 @@ function startAdminGameLoop(startTime,raceData,currentRound){
         name,stats:horseLibrary[data.hIdx].stats,events:data.events,
         progress:0,stamina:100,isRecovering:false,recoveryEndTime:0,
         finished:false,finishTime:null,finishRank:null,
-        exhaustedUntil:0,activeEffect:null
+        exhaustedUntil:0,activeEffect:null,
+        bananas:[],bananaSlipUntil:0
     }));
     let lastElapsed=-999;
     let finishedCount=0;
+    bananaRequestQueue=[];
+    if(bananaRequestListener){
+        db.ref('gameState/bananaRequests').off('child_added',bananaRequestListener);
+        bananaRequestListener=null;
+    }
+    bananaRequestListener=db.ref('gameState/bananaRequests').on('child_added',snap=>{
+        bananaRequestQueue.push({id:snap.key,...(snap.val()||{})});
+    });
 
     adminLoopTimer=setInterval(()=>{
         const now=Date.now()+serverOffset;
@@ -404,6 +475,19 @@ function startAdminGameLoop(startTime,raceData,currentRound){
         if(elapsed<0){lastElapsed=elapsed;return;}
         const dt=(lastElapsed<0)?0.1:(elapsed-lastElapsed);
         lastElapsed=elapsed;
+
+        if(currentRound===2&&bananaRequestQueue.length){
+            const pending=[...bananaRequestQueue];
+            bananaRequestQueue=[];
+            pending.forEach(req=>{
+                const leader=[...runners].filter(r=>!r.finished).sort((a,b)=>b.progress-a.progress)[0];
+                if(!leader){db.ref(`gameState/bananaRequests/${req.id}`).remove();return;}
+                const base=leader.progress+0.08;
+                const pos=Math.min(0.97,Math.max(0.05,base+Math.random()*0.04));
+                leader.bananas.push({pos,hit:false,by:req.by||""});
+                db.ref(`gameState/bananaRequests/${req.id}`).remove();
+            });
+        }
 
         runners.forEach(r=>{
             if(r.finished)return;
@@ -421,15 +505,32 @@ function startAdminGameLoop(startTime,raceData,currentRound){
                     else{r.progress=Math.max(0,r.progress-0.012*dt);r.activeEffect='slip';}
                 }
             });
+            if(elapsed<r.bananaSlipUntil){
+                spd*=0.35;
+                r.activeEffect='slip';
+            }
             r.progress+=spd*dt;
             r.stamina=Math.max(0,r.stamina-drain*dt);
+            r.bananas.forEach(b=>{
+                if(!b.hit&&r.progress>=b.pos){
+                    b.hit=true;
+                    r.progress=Math.max(0,r.progress-0.02);
+                    r.bananaSlipUntil=Math.max(r.bananaSlipUntil,elapsed+1.2);
+                    r.activeEffect='slip';
+                }
+            });
             if(r.stamina<=0){r.isRecovering=true;r.recoveryEndTime=elapsed+5;r.exhaustedUntil=elapsed+1.5;r.activeEffect='exhausted';}
             if(r.progress>=1){r.progress=1;r.finished=true;r.finishTime=elapsed;finishedCount++;r.finishRank=finishedCount;r.activeEffect='finished';}
         });
 
         // 寫快照
         const snapshot={};
-        runners.forEach(r=>{snapshot[r.name]={progress:r.progress,stamina:r.stamina,activeEffect:r.activeEffect,isRecovering:r.isRecovering,recoveryEndTime:r.recoveryEndTime,recoverySecondsLeft:r.isRecovering?Math.max(0,Math.ceil(r.recoveryEndTime-elapsed)):0,finished:r.finished,finishTime:r.finishTime,finishRank:r.finishRank};});
+        const bananaSnapshot={};
+        runners.forEach(r=>{
+            snapshot[r.name]={progress:r.progress,stamina:r.stamina,activeEffect:r.activeEffect,isRecovering:r.isRecovering,recoveryEndTime:r.recoveryEndTime,recoverySecondsLeft:r.isRecovering?Math.max(0,Math.ceil(r.recoveryEndTime-elapsed)):0,finished:r.finished,finishTime:r.finishTime,finishRank:r.finishRank};
+            bananaSnapshot[r.name]=(r.bananas||[]).filter(b=>!b.hit).map(b=>b.pos);
+        });
+        snapshot._bananas=bananaSnapshot;
         db.ref('gameState/snapshot').set(snapshot);
 
         // 全部跑完
@@ -477,12 +578,21 @@ function startAdminGameLoop(startTime,raceData,currentRound){
         }
     },100);
 }
-function stopAdminGameLoop(){if(adminLoopTimer){clearInterval(adminLoopTimer);adminLoopTimer=null;}}
+function stopAdminGameLoop(){
+    if(adminLoopTimer){clearInterval(adminLoopTimer);adminLoopTimer=null;}
+    if(bananaRequestListener){
+        db.ref('gameState/bananaRequests').off('child_added',bananaRequestListener);
+        bananaRequestListener=null;
+    }
+    bananaRequestQueue=[];
+}
 
 // 開始第二輪（從榜單按鈕觸發）
 function adminStartRound2(){
     document.getElementById('leaderboard-overlay').style.display='none';
     // 保留 assignments ，第二輪可直接開始
+    db.ref('gameState/bananaUses').remove();
+    db.ref('gameState/bananaRequests').remove();
     db.ref('gameState').update({status:'idle',currentRound:2});
 }
 
@@ -492,7 +602,12 @@ function adminReset(){
     stopListeningSnapshot();
     db.ref('users').remove();
     db.ref('assignments').remove();
-    db.ref('gameState').set({status:'idle'}); // set 而非 update，清掉所有子節點
+    db.ref('gameState/bananaUses').remove();
+    db.ref('gameState/bananaRequests').remove();
+    const resetAt=Date.now()+serverOffset;
+    lastResetAt=resetAt;
+    forceLocalReset();
+    db.ref('gameState').set({status:'idle',currentRound:1,resetAt}); // set 而非 update，清掉所有子節點
 }
 
 // =====================================================================
@@ -511,7 +626,7 @@ function setupTrackLanes(raceData){
     playerOrder.forEach((name,idx)=>{
         const div=document.createElement('div');
         div.className='lane';
-        div.innerHTML=`<div class="horse-pawn" id="pawn-${idx}"><div id="bubble-${idx}"></div><div class="horse-visual" id="vis-${idx}">🐎</div><div class="pawn-info"><div class="pawn-name">${name}</div><div class="stamina-track"><div class="stamina-fill" id="stam-${idx}" style="width:100%"></div></div></div></div>`;
+        div.innerHTML=`<div class="banana-layer" id="banana-${idx}"></div><div class="horse-pawn" id="pawn-${idx}"><div id="bubble-${idx}"></div><div class="horse-visual" id="vis-${idx}">🐎</div><div class="pawn-info"><div class="pawn-name">${name}</div><div class="stamina-track"><div class="stamina-fill" id="stam-${idx}" style="width:100%"></div></div></div></div>`;
         area.appendChild(div);
     });
 }
@@ -534,18 +649,25 @@ function handleCountdown(startTime){
 function renderFromSnapshot(snapshot){
     const area=document.getElementById('lanes-render-area');
     if(!area)return;
-    const finishLineX=area.offsetWidth-140;
+    const horseSize=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--horse-size'))||36;
+    const finishLineX=Math.max(0,area.offsetWidth-FINISH_LINE_WIDTH-horseSize);
+    const bananaMap=snapshot._bananas||{};
     playerOrder.forEach((name,i)=>{
         const data=snapshot[name];if(!data)return;
         const pawn=document.getElementById(`pawn-${i}`);
         const vis=document.getElementById(`vis-${i}`);
         const bub=document.getElementById(`bubble-${i}`);
         const stamFill=document.getElementById(`stam-${i}`);
+        const bananaLayer=document.getElementById(`banana-${i}`);
         if(!pawn||!vis||!bub||!stamFill)return;
         pawn.style.left=(data.progress*finishLineX)+"px";
         stamFill.style.width=data.stamina+"%";
         stamFill.classList.toggle('low',data.stamina<25);
         vis.className="horse-visual";bub.className="";bub.innerText="";
+        if(bananaLayer){
+            const bananas=bananaMap[name]||[];
+            bananaLayer.innerHTML=bananas.map(pos=>`<div class="banana" style="left:${pos*finishLineX}px">🍌</div>`).join('');
+        }
         switch(data.activeEffect){
             case'burst':vis.classList.add('effect-sprint');bub.className="speech-bubble bubble-sprint";bub.innerText="🔥 衝刺！";break;
             case'slip':vis.classList.add('effect-slip');bub.className="speech-bubble bubble-danger";bub.innerText="🤡 滑倒！";break;
@@ -621,4 +743,3 @@ init();
 </script>
 </body>
 </html>
-
