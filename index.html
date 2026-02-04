@@ -745,9 +745,9 @@ function renderFromSnapshot(snapshot){
             bananaLayer.innerHTML=bananas.map(pos=>`<div class="banana" style="left:${pos*finishLineX}px">🍌</div>`).join('');
         }
         switch(data.activeEffect){
-            case'burst':vis.classList.add('effect-sprint');bub.className="speech-bubble bubble-sprint";bub.innerText="🔥 衝刺！";break;
-            case'slip':vis.classList.add('effect-slip');bub.className="speech-bubble bubble-danger";bub.innerText="🤡 滑倒！";break;
-            case'exhausted':vis.classList.add('effect-exhausted');bub.className="speech-bubble bubble-danger";bub.innerText="😵 已爆肝！";break;
+            case'burst':vis.classList.add('effect-sprint');bub.className="speech-bubble bubble-sprint";bub.innerText="🔥 Sprint 衝刺！";break;
+            case'slip':vis.classList.add('effect-slip');bub.className="speech-bubble bubble-danger";bub.innerText="💥 隕石掉落！";break;
+            case'exhausted':vis.classList.add('effect-exhausted');bub.className="speech-bubble bubble-danger";bub.innerText="💀 已爆肝！";break;
             case'recovering':vis.classList.add('effect-exhausted');bub.className="speech-bubble bubble-recover";bub.innerText=`🛌 躺平中 ${data.recoverySecondsLeft}s`;break;
             case'finished':
                 const emoji=rankEmojis[(data.finishRank||1)-1]||"🏁";
@@ -819,3 +819,4 @@ init();
 </script>
 </body>
 </html>
+
