@@ -217,6 +217,7 @@ db.ref(".info/serverTimeOffset").on("value",s=>{serverOffset=s.val()||0;});
 // Init
 // =====================================================================
 function init(){
+    if(!myName&&!isAdmin){switchPage('page-login');}
     if(isAdmin){
         document.getElementById('admin-ctrl').style.display='flex';
         document.getElementById('admin-login-monitor').style.display='block';
@@ -302,7 +303,15 @@ function listenFirebase(){
     });
     db.ref('users').on('value',snap=>{
         const u=snap.val();
-        if(!u&&myName&&!isAdmin){localStorage.removeItem('race_user');location.reload();return;}
+        if(!u&&myName&&!isAdmin){
+            localStorage.removeItem('race_user');
+            myName="";
+            document.getElementById('label-user-name').innerText="GUEST";
+            switchPage('page-login');
+            updateBackButton();
+            updateBananaButton();
+            return;
+        }
         const users=u||{};
         names.forEach(n=>{const el=document.getElementById(`user-${n}`);users[n]?el.classList.add('taken'):el.classList.remove('taken');});
         if(myName&&users[myName]){
