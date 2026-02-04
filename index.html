@@ -746,7 +746,7 @@ function renderFromSnapshot(snapshot){
         }
         switch(data.activeEffect){
             case'burst':vis.classList.add('effect-sprint');bub.className="speech-bubble bubble-sprint";bub.innerText="🔥 Sprint 衝刺！";break;
-            case'slip':vis.classList.add('effect-slip');bub.className="speech-bubble bubble-danger";bub.innerText="💥 隕石掉落！";break;
+            case'slip':vis.classList.add('effect-slip');bub.className="speech-bubble bubble-danger";bub.innerText="😵‍💫 滑倒！";break;
             case'exhausted':vis.classList.add('effect-exhausted');bub.className="speech-bubble bubble-danger";bub.innerText="💀 已爆肝！";break;
             case'recovering':vis.classList.add('effect-exhausted');bub.className="speech-bubble bubble-recover";bub.innerText=`🛌 躺平中 ${data.recoverySecondsLeft}s`;break;
             case'finished':
@@ -819,4 +819,5 @@ init();
 </script>
 </body>
 </html>
+
 
