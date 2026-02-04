@@ -210,6 +210,7 @@ let currentRound=1;
 let currentStatus='idle';
 let bananaUses={};
 let lastResetAt=0;
+let adminLocked=true;
 const FINISH_LINE_WIDTH=36;
 db.ref(".info/serverTimeOffset").on("value",s=>{serverOffset=s.val()||0;});
 
@@ -223,21 +224,24 @@ function init(){
         localStorage.removeItem('race_user');
         myName="";
     }
-    if(!myName&&!isAdmin){
-        switchPage('page-login');
-        document.getElementById('label-user-name').innerText="GUEST";
-    }
     if(isAdmin){
+        adminLocked=true;
+        myName="";
+        localStorage.removeItem('race_user');
         document.getElementById('admin-ctrl').style.display='flex';
         document.getElementById('admin-login-monitor').style.display='block';
         document.getElementById('label-user-name').innerText="ADMIN";
+    }
+    if(!myName){
+        switchPage('page-login');
+        document.getElementById('label-user-name').innerText=isAdmin?"ADMIN":"GUEST";
     }
     const loginGrid=document.getElementById('login-grid');
     names.forEach((n,idx)=>{
         const d=document.createElement('div');
         d.className='name-card'+(idx===0?' wide':'');
         d.id=`user-${n}`;d.innerText=n;
-        d.onclick=()=>{myName=n;localStorage.setItem('race_user',n);db.ref(`users/${n}`).set(true);document.getElementById('bgm').play();};
+        d.onclick=()=>{if(isAdmin)adminLocked=false;myName=n;localStorage.setItem('race_user',n);db.ref(`users/${n}`).set(true);document.getElementById('bgm').play();};
         loginGrid.appendChild(d);
     });
     const setupGrid=document.getElementById('horse-selection-list');
@@ -312,6 +316,11 @@ function listenFirebase(){
     });
     db.ref('users').on('value',snap=>{
         const u=snap.val();
+        if(isAdmin&&adminLocked){
+            switchPage('page-login');
+            document.getElementById('btn-back').style.display='none';
+            return;
+        }
         if(!u&&myName&&!isAdmin){
             localStorage.removeItem('race_user');
             myName="";
@@ -345,13 +354,14 @@ function listenFirebase(){
     db.ref('gameState/status').on('value',snap=>{
         const status=snap.val();
         currentStatus=status||'idle';
+        if(isAdmin&&adminLocked){switchPage('page-login');updateBananaButton();return;}
         if(status==='racing'){
             isRacingNow=true;
             if(isAdmin)document.getElementById('admin-start-btn').style.display='none';
             db.ref('gameState').once('value',fullSnap=>{
                 const s=fullSnap.val();
                 if(!s||s.status!=='racing')return;
-                if(!myName&&!isAdmin){switchPage('page-login');updateBananaButton();return;}
+                if(!myName){switchPage('page-login');updateBananaButton();return;}
                 switchPage('page-track');
                 setupTrackLanes(s.raceData);
                 startListeningSnapshot();
@@ -361,7 +371,7 @@ function listenFirebase(){
             // 第一輪結束 → 顯示第一輪榜單（榜單是 overlay，但先把跑道頁切掉）
             isRacingNow=false;
             stopListeningSnapshot();
-            if(!myName&&!isAdmin){switchPage('page-login');updateBananaButton();return;}
+            if(!myName){switchPage('page-login');updateBananaButton();return;}
             switchPage('page-setup');
             db.ref('gameState/results').once('value',rSnap=>{
                 if(rSnap.val()) showRound1Leaderboard(rSnap.val());
@@ -370,7 +380,7 @@ function listenFirebase(){
             // 兩輪都完 → 顯示最終榜單
             isRacingNow=false;
             stopListeningSnapshot();
-            if(!myName&&!isAdmin){switchPage('page-login');updateBananaButton();return;}
+            if(!myName){switchPage('page-login');updateBananaButton();return;}
             switchPage('page-setup');
             db.ref('gameState').once('value',gsSnap=>{
                 const gs=gsSnap.val()||{};
@@ -397,7 +407,7 @@ function listenFirebase(){
             if(isAdmin)document.getElementById('admin-start-btn').style.display='inline-flex';
             document.getElementById('leaderboard-overlay').style.display='none';
             stopListeningSnapshot();
-            if(!myName&&!isAdmin){switchPage('page-login');updateBananaButton();return;}
+            if(!myName){switchPage('page-login');updateBananaButton();return;}
             switchPage('page-setup');
             updateBananaButton();
             // 讀 currentRound 來判斷標題
