@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -8,446 +7,128 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
-        /* ============================================================
-           shadcn-style Design Tokens
-           ============================================================ */
         :root {
-            /* Zinc palette (shadcn dark) */
-            --bg-base:      #09090b; /* zinc-950 */
-            --bg-card:      #18181b; /* zinc-900 */
-            --bg-card-hover:#1f1f24; /* zinc-900 hover */
-            --bg-muted:     #27272a; /* zinc-800 */
-            --border:       #3f3f46; /* zinc-700 */
-            --border-hover: #52525b; /* zinc-600 */
-            --text-primary: #f4f4f5; /* zinc-100 */
-            --text-secondary:#a1a1aa;/* zinc-400 */
-            --text-muted:   #71717a; /* zinc-500 */
-
-            /* Brand accents */
-            --gold:         #ffd700;
-            --gold-dim:     rgba(255,215,0,0.12);
-            --danger:       #ef4444; /* red-500 */
-            --danger-dim:   rgba(239,68,68,0.15);
-            --success:      #22c55e; /* green-500 */
-            --success-dim:  rgba(34,197,94,0.12);
-            --recover:      #38bdf8; /* sky-400 */
-            --recover-dim:  rgba(56,189,248,0.15);
-            --sprint:       #fb923c; /* orange-400 */
-
-            /* Radius */
-            --radius-sm:    4px;
-            --radius:       6px;
-            --radius-md:    8px;
-            --radius-lg:    12px;
-            --radius-pill:  9999px;
+            --bg-base:#09090b;--bg-card:#18181b;--bg-card-hover:#1f1f24;--bg-muted:#27272a;
+            --border:#3f3f46;--border-hover:#52525b;
+            --text-primary:#f4f4f5;--text-secondary:#a1a1aa;--text-muted:#71717a;
+            --gold:#ffd700;--gold-dim:rgba(255,215,0,0.12);
+            --danger:#ef4444;--danger-dim:rgba(239,68,68,0.15);
+            --success:#22c55e;--success-dim:rgba(34,197,94,0.12);
+            --recover:#38bdf8;--recover-dim:rgba(56,189,248,0.15);
+            --sprint:#fb923c;
+            --horse-size:36px;
+            --radius-sm:4px;--radius:6px;--radius-md:8px;--radius-lg:12px;--radius-pill:9999px;
         }
-
-        /* ============================================================
-           Reset + Base
-           ============================================================ */
-        *, *::before, *::after { box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
-            background: var(--bg-base);
-            color: var(--text-primary);
-            margin: 0; padding: 0;
-            height: 100vh;
-            overflow: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* ============================================================
-           Header
-           ============================================================ */
-        .header-bar {
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border);
-            padding: 0 20px;
-            height: 56px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: relative;
-            z-index: 1000;
-        }
-
-        /* ============================================================
-           Buttons (shadcn style)
-           ============================================================ */
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            font-size: 13px; font-weight: 500;
-            padding: 7px 14px;
-            cursor: pointer;
-            background: var(--bg-muted);
-            color: var(--text-primary);
-            transition: background 0.15s, border-color 0.15s, transform 0.1s;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .btn:hover  { background: var(--bg-card-hover); border-color: var(--border-hover); }
-        .btn:active { transform: scale(0.97); }
-
-        .btn-primary {
-            background: var(--gold);
-            color: #000;
-            border-color: var(--gold);
-            font-weight: 600;
-        }
-        .btn-primary:hover { background: #e6c200; border-color: #e6c200; }
-
-        .btn-danger  { background: var(--danger); color: #fff; border-color: var(--danger); }
-        .btn-danger:hover { background: #dc2626; border-color: #dc2626; }
-
-        .btn-ghost   { background: transparent; border-color: transparent; color: var(--text-secondary); }
-        .btn-ghost:hover { background: var(--bg-muted); color: var(--text-primary); border-color: transparent; }
-
-        /* ============================================================
-           Pages
-           ============================================================ */
-        .page {
-            display: none;
-            height: calc(100vh - 56px);
-            width: 100vw;
-            position: absolute;
-            top: 56px;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-        .page.active { display: flex; }
-
-        /* ============================================================
-           Login Page — Name Cards
-           ============================================================ */
-        .login-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            padding: 16px;
-            width: 100%;
-        }
-        .name-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 28px 12px;
-            text-align: center;
-            font-size: 17px;
-            font-weight: 600;
-            color: var(--text-primary);
-            cursor: pointer;
-            transition: border-color 0.15s, background 0.15s, transform 0.1s;
-        }
-        .name-card:hover {
-            border-color: var(--gold);
-            background: var(--gold-dim);
-            transform: translateY(-1px);
-        }
-        .name-card:active { transform: scale(0.97); }
-        .name-card.taken  { opacity: 0.25; filter: grayscale(1); pointer-events: none; cursor: default; }
-        .name-card.wide   { grid-column: 1 / -1; }
-
-        /* ============================================================
-           Horse Selection Page
-           ============================================================ */
-        .horse-list { padding: 12px 16px 100px; }
-
-        .horse-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 16px;
-            margin-bottom: 10px;
-            position: relative;
-            cursor: pointer;
-            transition: border-color 0.15s, background 0.15s, transform 0.1s;
-        }
-        .horse-card:hover { border-color: var(--border-hover); background: var(--bg-card-hover); transform: translateY(-1px); }
-        .horse-card:active { transform: scale(0.98); }
-        .horse-card.selected { border-color: var(--gold); background: var(--gold-dim); }
-        .horse-card.occupied { opacity: 0.4; filter: grayscale(0.6); pointer-events: none; cursor: default; }
-        .horse-card.occupied:hover { transform: none; background: var(--bg-card); border-color: var(--border); }
-
-        /* Owner badge — pill outline style */
-        .owner-badge {
-            position: absolute; top: 12px; right: 12px;
-            border: 1px solid var(--danger);
-            color: var(--danger);
-            background: var(--danger-dim);
-            padding: 2px 10px;
-            border-radius: var(--radius-pill);
-            font-size: 11px; font-weight: 500;
-            z-index: 2;
-        }
-
-        .horse-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-        .horse-header .horse-icon { font-size: 26px; }
-        .horse-header .horse-name { font-size: 16px; font-weight: 600; color: var(--gold); }
-
-        /* Stat bars */
-        .stat-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
-        .stat-item  { display: flex; flex-direction: column; gap: 4px; }
-        .stat-label { font-size: 11px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.3px; }
-        .stat-bar   { height: 5px; background: var(--bg-muted); border-radius: var(--radius-pill); overflow: hidden; }
-        .stat-fill  { height: 100%; background: var(--gold); border-radius: var(--radius-pill); transition: width 0.3s; }
-
-        .horse-desc {
-            font-size: 12px; color: var(--text-secondary);
-            font-style: italic;
-            border-top: 1px solid var(--border);
-            margin-top: 12px; padding-top: 10px;
-        }
-
-        /* Rule box */
-        .rule-box {
-            margin: 12px 16px 4px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 14px 16px;
-            font-size: 12px;
-            color: var(--text-secondary);
-            line-height: 1.7;
-        }
-        .rule-box b { color: var(--text-primary); font-weight: 600; }
-        .rule-box .rule-title { color: var(--gold); font-weight: 600; font-size: 13px; margin-bottom: 6px; display: block; }
-
-        /* ============================================================
-           Track Page
-           ============================================================ */
-        #page-track { background: var(--bg-base); top: 0; height: 100vh; }
-        .track-bg   { height: 100%; position: relative; }
-        #lanes-render-area { display: flex; flex-direction: column; height: 100%; }
-
-        .lane {
-            position: relative;
-            border-bottom: 1px solid #1a1a1f;
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            padding-left: 8px;
-        }
-        .lane:last-child { border-bottom: none; }
-
-        .finish-line {
-            position: absolute; right: 0; top: 0; bottom: 0; width: 36px;
-            background: repeating-linear-gradient(45deg, #fff, #fff 8px, #1a1a1f 8px, #1a1a1f 16px);
-            border-left: 3px solid var(--gold);
-            z-index: 5;
-        }
-
-        /* Horse pawn */
-        .horse-pawn {
-            position: absolute; left: 0;
-            display: flex; align-items: center;
-            width: 140px;
-            transition: left 0.15s linear;
-        }
-        .horse-visual {
-            font-size: 36px;
-            transform: scaleX(-1);
-            animation: gallop 0.4s infinite;
-            transition: filter 0.25s;
-        }
-
-        .effect-sprint   { filter: drop-shadow(0 0 10px var(--sprint)) scaleX(-1) !important; }
-        .effect-exhausted{ filter: drop-shadow(0 0 8px var(--danger))  scaleX(-1) !important; }
-        .effect-slip     { animation: slip-shake 0.18s infinite !important; }
-
-        @keyframes gallop {
-            0%, 100% { transform: scaleX(-1) translateY(0); }
-            50%      { transform: scaleX(-1) translateY(-5px); }
-        }
-        @keyframes slip-shake {
-            0%   { transform: scaleX(-1) rotate(0deg); }
-            25%  { transform: scaleX(-1) rotate(18deg)  translateY(-2px); }
-            75%  { transform: scaleX(-1) rotate(-18deg) translateY(2px); }
-            100% { transform: scaleX(-1) rotate(0deg); }
-        }
-
-        /* Speech bubble */
-        .speech-bubble {
-            position: absolute; top: -48px; left: 8px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 4px 10px;
-            border-radius: var(--radius-md);
-            font-size: 12px; font-weight: 600;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-            z-index: 20; white-space: nowrap;
-        }
-        .speech-bubble::after {
-            content: ''; position: absolute; bottom: -5px; left: 12px;
-            border-width: 5px 5px 0; border-style: solid;
-            border-color: var(--bg-card) transparent;
-        }
-
-        .bubble-danger {
-            background: var(--danger-dim);
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-        .bubble-danger::after { border-color: var(--danger-dim) transparent; }
-
-        .bubble-recover {
-            background: var(--recover-dim);
-            border-color: var(--recover);
-            color: var(--recover);
-        }
-        .bubble-recover::after { border-color: var(--recover-dim) transparent; }
-
-        .bubble-sprint {
-            background: rgba(251,146,60,0.15);
-            border-color: var(--sprint);
-            color: var(--sprint);
-        }
-        .bubble-sprint::after { border-color: rgba(251,146,60,0.15) transparent; }
-
-        .bubble-finish {
-            background: var(--gold-dim);
-            border-color: var(--gold);
-            color: var(--gold);
-            font-size: 18px;
-        }
-        .bubble-finish::after { border-color: var(--gold-dim) transparent; }
-
-        /* Stamina bar under name */
-        .pawn-info       { margin-left: 8px; }
-        .pawn-name       { font-size: 10px; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.2px; }
-        .stamina-track   { width: 44px; height: 3px; background: var(--bg-muted); border-radius: var(--radius-pill); margin-top: 3px; overflow: hidden; }
-        .stamina-fill    { height: 100%; background: var(--success); border-radius: var(--radius-pill); transition: width 0.25s; }
-        .stamina-fill.low { background: var(--danger); }
-
-        /* ============================================================
-           Countdown Overlay
-           ============================================================ */
-        #countdown-overlay {
-            position: fixed; inset: 0;
-            background: rgba(9,9,11,0.88);
-            display: none; align-items: center; justify-content: center;
-            z-index: 2000;
-            font-size: 140px; font-weight: 700;
-            color: var(--gold);
-            letter-spacing: -4px;
-        }
-
-        /* ============================================================
-           Admin Monitor Box
-           ============================================================ */
-        .admin-monitor-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            margin: 12px 16px;
-            padding: 12px 14px;
-            border-radius: var(--radius-lg);
-        }
-        .admin-monitor-title { font-size: 11px; font-weight: 600; color: var(--gold); margin-bottom: 8px; letter-spacing: 0.4px; }
-
-        .player-status-tag {
-            display: inline-flex; align-items: center;
-            padding: 3px 10px;
-            border-radius: var(--radius-pill);
-            font-size: 11px; font-weight: 500;
-            margin: 2px 2px;
-            background: var(--bg-muted);
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            transition: border-color 0.15s, color 0.15s;
-        }
-        .player-status-tag.ready { border-color: var(--success); color: var(--success); }
-
-        /* Admin floating controls */
-        .admin-persistent-ctrl {
-            position: fixed; bottom: 24px; left: 24px;
-            z-index: 9999; display: none;
-            flex-direction: column; gap: 8px;
-        }
-
-        /* ============================================================
-           Leaderboard Overlay (shadcn modal style)
-           ============================================================ */
-        #leaderboard-overlay {
-            position: fixed; inset: 0;
-            background: rgba(9,9,11,0.85);
-            backdrop-filter: blur(4px);
-            z-index: 10000;
-            display: none; align-items: center; justify-content: center;
-        }
-        .leaderboard-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            width: 88%; max-width: 420px;
-            padding: 28px 24px 24px;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
-        }
-        .leaderboard-title {
-            text-align: center;
-            font-size: 20px; font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 20px;
-        }
-        .leaderboard-title span { color: var(--gold); }
-
-        .rank-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 11px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .rank-row:last-of-type { border-bottom: none; }
-        .rank-row-left  { display: flex; align-items: center; gap: 12px; }
-        .rank-badge {
-            width: 28px; height: 28px;
-            border-radius: var(--radius-pill);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 700;
-            background: var(--bg-muted); color: var(--text-muted);
-            border: 1px solid var(--border);
-        }
-        .rank-badge.gold   { background: rgba(255,215,0,0.18); border-color: var(--gold);  color: var(--gold);  }
-        .rank-badge.silver { background: rgba(192,192,192,0.18); border-color: #c0c0c0; color: #c0c0c0; }
-        .rank-badge.bronze { background: rgba(205,127,50,0.18);  border-color: #cd7f32; color: #cd7f32; }
-
-        .rank-name  { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-
-        .lb-reset-btn { display: none; width: 100%; margin-top: 20px; padding: 10px 0; font-size: 14px; }
-
-        /* ============================================================
-           Page-level heading helpers
-           ============================================================ */
-        .page-heading {
-            text-align: center; padding: 24px 16px 4px;
-        }
-        .page-heading h1 {
-            margin: 0; font-size: 22px; font-weight: 700;
-            color: var(--text-primary); letter-spacing: 2px;
-        }
-        .page-heading h2 {
-            margin: 0; font-size: 18px; font-weight: 600; color: var(--text-primary);
-        }
-        .page-heading h1 .accent, .page-heading h2 .accent { color: var(--gold); }
-        .page-heading p { margin: 6px 0 0; font-size: 13px; color: var(--text-muted); }
+        *,*::before,*::after{box-sizing:border-box;}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',sans-serif;background:var(--bg-base);color:var(--text-primary);margin:0;padding:0;height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased;}
+        .header-bar{background:var(--bg-card);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1000;}
+        .btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:var(--radius-md);font-size:13px;font-weight:500;padding:7px 14px;cursor:pointer;background:var(--bg-muted);color:var(--text-primary);transition:background 0.15s,border-color 0.15s,transform 0.1s;user-select:none;}
+        .btn:hover{background:var(--bg-card-hover);border-color:var(--border-hover);}
+        .btn:active{transform:scale(0.97);}
+        .btn-primary{background:var(--gold);color:#000;border-color:var(--gold);font-weight:600;}
+        .btn-primary:hover{background:#e6c200;border-color:#e6c200;}
+        .btn-danger{background:var(--danger);color:#fff;border-color:var(--danger);}
+        .btn-danger:hover{background:#dc2626;border-color:#dc2626;}
+        .btn-ghost{background:transparent;border-color:transparent;color:var(--text-secondary);}
+        .btn-ghost:hover{background:var(--bg-muted);color:var(--text-primary);border-color:transparent;}
+        .page{display:none;height:calc(100vh - 56px);width:100vw;position:absolute;top:56px;flex-direction:column;overflow-y:auto;}
+        .page.active{display:flex;}
+        .login-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:16px;width:100%;}
+        .name-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 12px;text-align:center;font-size:17px;font-weight:600;color:var(--text-primary);cursor:pointer;transition:border-color 0.15s,background 0.15s,transform 0.1s;}
+        .name-card:hover{border-color:var(--gold);background:var(--gold-dim);transform:translateY(-1px);}
+        .name-card:active{transform:scale(0.97);}
+        .name-card.taken{opacity:0.25;filter:grayscale(1);pointer-events:none;cursor:default;}
+        .name-card.wide{grid-column:1 / -1;}
+        .horse-list{padding:12px 16px 100px;}
+        .horse-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px;position:relative;cursor:pointer;transition:border-color 0.15s,background 0.15s,transform 0.1s;}
+        .horse-card:hover{border-color:var(--border-hover);background:var(--bg-card-hover);transform:translateY(-1px);}
+        .horse-card:active{transform:scale(0.98);}
+        .horse-card.selected{border-color:var(--gold);background:var(--gold-dim);}
+        .horse-card.occupied{opacity:0.4;filter:grayscale(0.6);pointer-events:none;cursor:default;}
+        .horse-card.occupied:hover{transform:none;background:var(--bg-card);border-color:var(--border);}
+        .owner-badge{position:absolute;top:12px;right:12px;border:1px solid var(--danger);color:var(--danger);background:var(--danger-dim);padding:2px 10px;border-radius:var(--radius-pill);font-size:11px;font-weight:500;z-index:2;}
+        .horse-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+        .horse-header .horse-icon{font-size:26px;}
+        .horse-header .horse-name{font-size:16px;font-weight:600;color:var(--gold);}
+        .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;}
+        .stat-item{display:flex;flex-direction:column;gap:4px;}
+        .stat-label{font-size:11px;font-weight:500;color:var(--text-muted);letter-spacing:0.3px;}
+        .stat-bar{height:5px;background:var(--bg-muted);border-radius:var(--radius-pill);overflow:hidden;}
+        .stat-fill{height:100%;background:var(--gold);border-radius:var(--radius-pill);transition:width 0.3s;}
+        .horse-desc{font-size:12px;color:var(--text-secondary);font-style:italic;border-top:1px solid var(--border);margin-top:12px;padding-top:10px;}
+        .rule-box{margin:12px 16px 4px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;font-size:12px;color:var(--text-secondary);line-height:1.7;}
+        .rule-box b{color:var(--text-primary);font-weight:600;}
+        .rule-box .rule-title{color:var(--gold);font-weight:600;font-size:13px;margin-bottom:6px;display:block;}
+        #page-track{background:var(--bg-base);top:0;height:100vh;}
+        .track-bg{height:100%;position:relative;}
+        #lanes-render-area{display:flex;flex-direction:column;height:100%;}
+        .lane{position:relative;border-bottom:1px solid #1a1a1f;flex-grow:1;display:flex;align-items:center;padding-left:8px;}
+        .lane:last-child{border-bottom:none;}
+        .finish-line{position:absolute;right:0;top:0;bottom:0;width:36px;background:repeating-linear-gradient(45deg,#fff,#fff 8px,#1a1a1f 8px,#1a1a1f 16px);border-left:3px solid var(--gold);z-index:5;}
+        .horse-pawn{position:absolute;left:0;display:flex;align-items:center;width:140px;transition:left 0.15s linear;}
+        .horse-visual{font-size:var(--horse-size);transform:scaleX(-1);animation:gallop 0.4s infinite;transition:filter 0.25s;}
+        .effect-sprint{filter:drop-shadow(0 0 10px var(--sprint)) scaleX(-1) !important;}
+        .effect-exhausted{filter:drop-shadow(0 0 8px var(--danger)) scaleX(-1) !important;}
+        .effect-slip{animation:slip-shake 0.18s infinite !important;}
+        @keyframes gallop{0%,100%{transform:scaleX(-1) translateY(0);}50%{transform:scaleX(-1) translateY(-5px);}}
+        @keyframes slip-shake{0%{transform:scaleX(-1) rotate(0deg);}25%{transform:scaleX(-1) rotate(18deg) translateY(-2px);}75%{transform:scaleX(-1) rotate(-18deg) translateY(2px);}100%{transform:scaleX(-1) rotate(0deg);}}
+        .speech-bubble{position:absolute;top:-48px;left:8px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);padding:4px 10px;border-radius:var(--radius-md);font-size:12px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,0.35);z-index:20;white-space:nowrap;}
+        .speech-bubble::after{content:'';position:absolute;bottom:-5px;left:12px;border-width:5px 5px 0;border-style:solid;border-color:var(--bg-card) transparent;}
+        .bubble-danger{background:var(--danger-dim);border-color:var(--danger);color:var(--danger);}
+        .bubble-danger::after{border-color:var(--danger-dim) transparent;}
+        .bubble-recover{background:var(--recover-dim);border-color:var(--recover);color:var(--recover);}
+        .bubble-recover::after{border-color:var(--recover-dim) transparent;}
+        .bubble-sprint{background:rgba(251,146,60,0.15);border-color:var(--sprint);color:var(--sprint);}
+        .bubble-sprint::after{border-color:rgba(251,146,60,0.15) transparent;}
+        .bubble-finish{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);font-size:18px;}
+        .bubble-finish::after{border-color:var(--gold-dim) transparent;}
+        .pawn-info{margin-left:8px;}
+        .pawn-name{font-size:10px;font-weight:600;color:var(--text-secondary);letter-spacing:0.2px;}
+        .stamina-track{width:44px;height:3px;background:var(--bg-muted);border-radius:var(--radius-pill);margin-top:3px;overflow:hidden;}
+        .stamina-fill{height:100%;background:var(--success);border-radius:var(--radius-pill);transition:width 0.25s;}
+        .stamina-fill.low{background:var(--danger);}
+        #countdown-overlay{position:fixed;inset:0;background:rgba(9,9,11,0.88);display:none;align-items:center;justify-content:center;z-index:2000;font-size:140px;font-weight:700;color:var(--gold);letter-spacing:-4px;}
+        .admin-monitor-box{background:var(--bg-card);border:1px solid var(--border);margin:12px 16px;padding:12px 14px;border-radius:var(--radius-lg);}
+        .admin-monitor-title{font-size:11px;font-weight:600;color:var(--gold);margin-bottom:8px;letter-spacing:0.4px;}
+        .player-status-tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:var(--radius-pill);font-size:11px;font-weight:500;margin:2px;background:var(--bg-muted);border:1px solid var(--border);color:var(--text-muted);transition:border-color 0.15s,color 0.15s;}
+        .player-status-tag.ready{border-color:var(--success);color:var(--success);}
+        .admin-persistent-ctrl{position:fixed;bottom:24px;left:24px;z-index:9999;display:none;flex-direction:column;gap:8px;}
+        .player-ctrl{position:fixed;bottom:24px;right:24px;z-index:9999;display:none;flex-direction:column;gap:8px;}
+        .btn-warn{background:#f59e0b;color:#111827;border-color:#f59e0b;font-weight:600;}
+        .btn-warn:hover{background:#d97706;border-color:#d97706;}
+        .btn[disabled]{opacity:0.45;cursor:default;transform:none;}
+        #leaderboard-overlay{position:fixed;inset:0;background:rgba(9,9,11,0.85);backdrop-filter:blur(4px);z-index:10000;display:none;align-items:center;justify-content:center;}
+        .leaderboard-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:88%;max-width:420px;padding:28px 24px 24px;box-shadow:0 16px 40px rgba(0,0,0,0.4);}
+        .leaderboard-title{text-align:center;font-size:20px;font-weight:700;color:var(--text-primary);margin-bottom:4px;}
+        .leaderboard-title span{color:var(--gold);}
+        .leaderboard-subtitle{text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:18px;}
+        .rank-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);}
+        .rank-row:last-of-type{border-bottom:none;}
+        .rank-row-left{display:flex;align-items:center;gap:12px;}
+        .rank-badge{width:28px;height:28px;border-radius:var(--radius-pill);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:var(--bg-muted);color:var(--text-muted);border:1px solid var(--border);}
+        .rank-badge.gold{background:rgba(255,215,0,0.18);border-color:var(--gold);color:var(--gold);}
+        .rank-badge.silver{background:rgba(192,192,192,0.18);border-color:#c0c0c0;color:#c0c0c0;}
+        .rank-badge.bronze{background:rgba(205,127,50,0.18);border-color:#cd7f32;color:#cd7f32;}
+        .rank-name{font-size:14px;font-weight:600;color:var(--text-primary);}
+        .rank-score{font-size:13px;font-weight:600;color:var(--gold);}
+        .rank-score-sub{font-size:10px;color:var(--text-muted);font-weight:400;}
+        .lb-btn{width:100%;margin-top:20px;padding:10px 0;font-size:14px;}
+        .page-heading{text-align:center;padding:24px 16px 4px;}
+        .page-heading h1{margin:0;font-size:22px;font-weight:700;color:var(--text-primary);letter-spacing:2px;}
+        .page-heading h2{margin:0;font-size:18px;font-weight:600;color:var(--text-primary);}
+        .page-heading h1 .accent,.page-heading h2 .accent{color:var(--gold);}
+        .page-heading p{margin:6px 0 0;font-size:13px;color:var(--text-muted);}
+        .banana-layer{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;}
+        .banana{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:20px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));}
     </style>
 </head>
 <body>
-
 <audio id="bgm" loop src="https://assets.mixkit.co/music/preview/mixkit-fast-game-action-loop-460.mp3"></audio>
 <div id="countdown-overlay">READY</div>
-
-<!-- Header -->
 <div class="header-bar" id="header">
-    <div>
-        <button class="btn btn-ghost" id="btn-back" onclick="logout()" style="display:none;">⬅ 返回</button>
-    </div>
-    <div id="label-user-name" style="font-size:13px; font-weight:600; color:var(--gold);">GUEST</div>
+    <div><button class="btn btn-ghost" id="btn-back" onclick="logout()" style="display:none;">⬅ 返回</button></div>
+    <div id="label-user-name" style="font-size:13px;font-weight:600;color:var(--gold);">GUEST</div>
 </div>
-
-<!-- ============================================================
-     PAGE: Login
-     ============================================================ -->
 <div id="page-login" class="page active">
     <div id="admin-login-monitor" style="display:none;" class="admin-monitor-box">
         <div class="admin-monitor-title">[ADMIN] 即時選馬進度</div>
@@ -459,10 +140,6 @@
     </div>
     <div class="login-grid" id="login-grid"></div>
 </div>
-
-<!-- ============================================================
-     PAGE: Horse Selection
-     ============================================================ -->
 <div id="page-setup" class="page">
     <div class="page-heading">
         <h2>🐎 請選擇您的參賽戰馬</h2>
@@ -476,554 +153,589 @@
     </div>
     <div class="horse-list" id="horse-selection-list"></div>
 </div>
-
-<!-- ============================================================
-     PAGE: Track
-     ============================================================ -->
 <div id="page-track" class="page">
     <div class="track-bg">
         <div class="finish-line"></div>
         <div id="lanes-render-area"></div>
     </div>
 </div>
-
-<!-- Admin Controls -->
 <div class="admin-persistent-ctrl" id="admin-ctrl">
-    <button class="btn btn-primary" id="admin-start-btn" onclick="adminStart()" style="padding:12px 28px; font-size:15px;">🏁 開始比賽</button>
-    <button class="btn btn-danger"  id="admin-reset-btn"  onclick="adminReset()"  style="padding:8px 18px;">🔄 重置全場</button>
+    <button class="btn btn-primary" id="admin-start-btn" onclick="adminStart()" style="padding:12px 28px;font-size:15px;">🏁 開始比賽</button>
+    <button class="btn btn-danger" id="admin-reset-btn" onclick="adminReset()" style="padding:8px 18px;">🔄 重置全場</button>
 </div>
-
-<!-- ============================================================
-     Leaderboard Overlay
-     ============================================================ -->
+<div class="player-ctrl" id="player-ctrl">
+    <button class="btn btn-warn" id="banana-btn" onclick="dropBanana()">🍌 丟香蕉皮 (1/1)</button>
+</div>
 <div id="leaderboard-overlay">
     <div class="leaderboard-card">
         <div class="leaderboard-title">🏆 <span>排行榜</span> 🏆</div>
+        <div class="leaderboard-subtitle" id="lb-subtitle"></div>
         <div id="rankings-list"></div>
-        <button class="btn btn-ghost lb-reset-btn" id="lb-reset-btn" onclick="adminReset()">下一輪比賽</button>
+        <button class="btn btn-ghost lb-btn" id="lb-action-btn" style="display:none;"></button>
     </div>
 </div>
-
 <script>
-// =====================================================================
-// Firebase
-// =====================================================================
-const firebaseConfig = {
-    apiKey: "AIzaSyBHJtwI42b8i6z7zRw6tDgtR4ITSNKWrf8",
-    authDomain: "aiot-d53dc.firebaseapp.com",
-    databaseURL: "https://aiot-d53dc-default-rtdb.firebaseio.com",
-    projectId: "aiot-d53dc",
-    storageBucket: "aiot-d53dc.firebasestorage.app",
-    messagingSenderId: "1021331253049",
-    appId: "1:1021331253049:web:11f0695e8ab64eae0baae8",
-    measurementId: "G-9YDKS70ZE7"
-};
+const firebaseConfig={apiKey:"AIzaSyBHJtwI42b8i6z7zRw6tDgtR4ITSNKWrf8",authDomain:"aiot-d53dc.firebaseapp.com",databaseURL:"https://aiot-d53dc-default-rtdb.firebaseio.com",projectId:"aiot-d53dc",storageBucket:"aiot-d53dc.firebasestorage.app",messagingSenderId:"1021331253049",appId:"1:1021331253049:web:11f0695e8ab64eae0baae8",measurementId:"G-9YDKS70ZE7"};
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db=firebase.database();
 
 // =====================================================================
-// Data
+// 積分表
 // =====================================================================
-const horseLibrary = [
-    { id:0,  trait:"薪水小偷",      stats:{spd:60,sta:95,burst:40,lck:70}, desc:"擅長在主管視線外緩步前進，體力深不可測。" },
-    { id:1,  trait:"下班戰神",       stats:{spd:55,sta:65,burst:95,lck:60}, desc:"一旦夕陽西下，體力再低也能爆發衝刺。" },
-    { id:2,  trait:"爆肝王",         stats:{spd:95,sta:25,burst:85,lck:30}, desc:"起步瞬間即巔峰，但爆肝倒數是他的日常。" },
-    { id:3,  trait:"會議戰鬥機",     stats:{spd:75,sta:60,burst:60,lck:80}, desc:"節奏感極強，以穩定的高語速壓制全場。" },
-    { id:4,  trait:"咖啡中毒者",     stats:{spd:80,sta:45,burst:75,lck:55}, desc:"依賴咖啡因提速，沒咖啡時體力掉超快。" },
-    { id:5,  trait:"甩鍋專業戶",     stats:{spd:45,sta:85,burst:30,lck:99}, desc:"拥有神級閃避，幾乎不會滑倒，運氣點滿。" },
-    { id:6,  trait:"加班邊緣人",     stats:{spd:55,sta:90,burst:50,lck:65}, desc:"雖然沒存在感，但體力驚人且跑得異常穩。" },
-    { id:7,  trait:"截稿衝刺",       stats:{spd:40,sta:70,burst:99,lck:40}, desc:"平時都在混，最後關頭衝刺力量無人能及。" },
-    { id:8,  trait:"用嘴做事",       stats:{spd:85,sta:50,burst:70,lck:65}, desc:"用氣勢驅動四肢，爆發力與速度兼具的型男。" },
-    { id:9,  trait:"中庸之道",       stats:{spd:70,sta:75,burst:65,lck:70}, desc:"不求最快，但體力與運氣讓他始終在第一梯隊。" },
-    { id:10, trait:"通靈王",         stats:{spd:50,sta:50,burst:40,lck:100},desc:"能預知需求，靠著神級直覺避開所有障礙。" },
-    { id:11, trait:"簡報大師",       stats:{spd:90,sta:30,burst:90,lck:40}, desc:"畫面很華麗，但續航力極低，沒講完就斷電。" },
-    { id:12, trait:"Debug王",        stats:{spd:65,sta:65,burst:65,lck:95}, desc:"只要他在，程式碼自動修復，怎麼修的?不知道，運氣就是一切。" },
-    { id:13, trait:"茶水間守門員",   stats:{spd:40,sta:100,burst:20,lck:80},desc:"每天準時報到，體力全場最硬，慢慢磨到終點。" },
-    { id:14, trait:"Teasm 潛水員",   stats:{spd:75,sta:75,burst:50,lck:50}, desc:"沒事不回訊，一旦回訊息就是一鳴驚人。" }
+const POINTS = [3000,2000,1000,800,700,600,500,400,300,200,100]; // index 0 = 第1名
+
+const horseLibrary=[
+    {id:0,trait:"薪水小偷",stats:{spd:60,sta:95,burst:40,lck:70},desc:"擅長在主管視線外緩步前進，體力深不可測。"},
+    {id:1,trait:"下班戰神",stats:{spd:55,sta:65,burst:95,lck:60},desc:"一旦夕陽西下，體力再低也能爆發衝刺。"},
+    {id:2,trait:"爆肝王",stats:{spd:95,sta:25,burst:85,lck:30},desc:"起步瞬間即巔峰，但爆肝倒數是他的日常。"},
+    {id:3,trait:"會議戰鬥機",stats:{spd:75,sta:60,burst:60,lck:80},desc:"節奏感極強，以穩定的高語速壓制全場。"},
+    {id:4,trait:"咖啡中毒者",stats:{spd:80,sta:45,burst:75,lck:55},desc:"依賴咖啡因提速，沒咖啡時體力掉超快。"},
+    {id:5,trait:"甩鍋專業戶",stats:{spd:45,sta:85,burst:30,lck:99},desc:"拥有神級閃避，幾乎不會滑倒，運氣點滿。"},
+    {id:6,trait:"加班邊緣人",stats:{spd:55,sta:90,burst:50,lck:65},desc:"雖然沒存在感，但體力驚人且跑得異常穩。"},
+    {id:7,trait:"截稿衝刺",stats:{spd:40,sta:70,burst:99,lck:40},desc:"平時都在混，最後關頭衝刺力量無人能及。"},
+    {id:8,trait:"用嘴做事",stats:{spd:85,sta:50,burst:70,lck:65},desc:"用氣勢驅動四肢，爆發力與速度兼具的型男。"},
+    {id:9,trait:"中庸之道",stats:{spd:70,sta:75,burst:65,lck:70},desc:"不求最快，但體力與運氣讓他始終在第一梯隊。"},
+    {id:10,trait:"通靈王",stats:{spd:50,sta:50,burst:40,lck:100},desc:"能預知需求，靠著神級直覺避開所有障礙。"},
+    {id:11,trait:"簡報大師",stats:{spd:90,sta:30,burst:90,lck:40},desc:"畫面很華麗，但續航力極低，沒講完就斷電。"},
+    {id:12,trait:"Debug王",stats:{spd:65,sta:65,burst:65,lck:95},desc:"只要他在，程式碼自動修復，怎麼修的?不知道，運氣就是一切。"},
+    {id:13,trait:"茶水間守門員",stats:{spd:40,sta:100,burst:20,lck:80},desc:"每天準時報到，體力全場最硬，慢慢磨到終點。"},
+    {id:14,trait:"Teasm 潛水員",stats:{spd:75,sta:75,burst:50,lck:50},desc:"沒事不回訊，一旦回訊息就是一鳴驚人。"}
 ];
-
-const names = ["Greg","Julia","Molly","DON","豪哥","Gimme","Erick","韋志","Juli","Jason","Kris"];
-
-// Finish-line emojis indexed 0-based: rank 1 = index 0
-const rankEmojis = ["🥳","😎","😊","😐","🤔","😓","😫","😭","🥵","🤬","🦥"];
-
-let myName = localStorage.getItem('race_user') || "";
-const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
-let serverOffset = 0;
-
-db.ref(".info/serverTimeOffset").on("value", s => { serverOffset = s.val() || 0; });
+const names=["Greg","Julia","Molly","DON","豪哥","Gimme","Erick","韋志","Juli","Jason","Kris"];
+const rankEmojis=["🥳","😎","😊","😐","🤔","😓","😫","😭","🥵","🤬","🦥"];
+let myName=localStorage.getItem('race_user')||"";
+const isAdmin=new URLSearchParams(window.location.search).get('admin')==='1';
+let serverOffset=0;
+let currentRound=1;
+let currentStatus='idle';
+let bananaUses={};
+let lastResetAt=0;
+const FINISH_LINE_WIDTH=36;
+db.ref(".info/serverTimeOffset").on("value",s=>{serverOffset=s.val()||0;});
 
 // =====================================================================
 // Init
 // =====================================================================
-function init() {
-    if (isAdmin) {
-        document.getElementById('admin-ctrl').style.display = 'flex';
-        document.getElementById('admin-login-monitor').style.display = 'block';
-        document.getElementById('lb-reset-btn').style.display = 'inline-flex';
-        document.getElementById('label-user-name').innerText = "ADMIN";
+function init(){
+    if(isAdmin){
+        document.getElementById('admin-ctrl').style.display='flex';
+        document.getElementById('admin-login-monitor').style.display='block';
+        document.getElementById('label-user-name').innerText="ADMIN";
     }
-
-    // Login grid
-    const loginGrid = document.getElementById('login-grid');
-    names.forEach((n, idx) => {
-        const d = document.createElement('div');
-        d.className = 'name-card' + (idx === 0 ? ' wide' : '');
-        d.id = `user-${n}`; d.innerText = n;
-        d.onclick = () => {
-            myName = n;
-            localStorage.setItem('race_user', n);
-            db.ref(`users/${n}`).set(true);
-            document.getElementById('bgm').play();
-        };
+    const loginGrid=document.getElementById('login-grid');
+    names.forEach((n,idx)=>{
+        const d=document.createElement('div');
+        d.className='name-card'+(idx===0?' wide':'');
+        d.id=`user-${n}`;d.innerText=n;
+        d.onclick=()=>{myName=n;localStorage.setItem('race_user',n);db.ref(`users/${n}`).set(true);document.getElementById('bgm').play();};
         loginGrid.appendChild(d);
     });
-
-    // Horse cards
-    const setupGrid = document.getElementById('horse-selection-list');
-    horseLibrary.forEach((h, i) => {
-        const d = document.createElement('div');
-        d.className = 'horse-card'; d.id = `slot-${i}`;
-        d.innerHTML = `
-            <div class="owner-badge" id="owner-${i}" style="display:none;"></div>
-            <div class="horse-header">
-                <span class="horse-icon">🐎</span>
-                <span class="horse-name">${h.trait}</span>
-            </div>
-            <div class="stat-grid">
-                ${renderStat("速度", h.stats.spd)}
-                ${renderStat("體力", h.stats.sta)}
-                ${renderStat("爆發", h.stats.burst)}
-                ${renderStat("運氣", h.stats.lck)}
-            </div>
-            <div class="horse-desc">${h.desc}</div>
-        `;
-        d.onclick = () => {
-            if (!myName) return;
-            db.ref('assignments').once('value', snap => {
-                const a = snap.val() || {};
-                if (Object.entries(a).some(([p, idx]) => idx === i && p !== myName)) {
-                    alert("慢了！被選走囉！");
-                } else {
-                    db.ref(`assignments/${myName}`).set(i);
-                }
-            });
-        };
+    const setupGrid=document.getElementById('horse-selection-list');
+    horseLibrary.forEach((h,i)=>{
+        const d=document.createElement('div');
+        d.className='horse-card';d.id=`slot-${i}`;
+        d.innerHTML=`<div class="owner-badge" id="owner-${i}" style="display:none;"></div><div class="horse-header"><span class="horse-icon">🐎</span><span class="horse-name">${h.trait}</span></div><div class="stat-grid">${renderStat("速度",h.stats.spd)}${renderStat("體力",h.stats.sta)}${renderStat("爆發",h.stats.burst)}${renderStat("運氣",h.stats.lck)}</div><div class="horse-desc">${h.desc}</div>`;
+        d.onclick=()=>{if(!myName)return;db.ref('assignments').once('value',snap=>{const a=snap.val()||{};if(Object.entries(a).some(([p,idx])=>idx===i&&p!==myName)){alert("慢了！被選走囉！");}else{db.ref(`assignments/${myName}`).set(i);}});};
         setupGrid.appendChild(d);
     });
-
     listenFirebase();
 }
-
-function renderStat(label, val) {
-    return `<div class="stat-item">
-                <span class="stat-label">${label}</span>
-                <div class="stat-bar"><div class="stat-fill" style="width:${val}%"></div></div>
-            </div>`;
+function renderStat(label,val){return`<div class="stat-item"><span class="stat-label">${label}</span><div class="stat-bar"><div class="stat-fill" style="width:${val}%"></div></div></div>`;}
+function logout(){if(myName){db.ref(`users/${myName}`).remove();db.ref(`assignments/${myName}`).remove();}localStorage.removeItem('race_user');myName="";location.reload();}
+function updateBackButton(){
+    const backBtn=document.getElementById('btn-back');
+    if(!backBtn) return;
+    if(!myName||isAdmin){backBtn.style.display='none';return;}
+    backBtn.style.display=(currentRound===2)?'none':'inline-flex';
 }
-
-function logout() {
-    if (myName) { db.ref(`users/${myName}`).remove(); db.ref(`assignments/${myName}`).remove(); }
-    localStorage.removeItem('race_user'); myName = ""; location.reload();
+function updateBananaButton(){
+    const ctrl=document.getElementById('player-ctrl');
+    const btn=document.getElementById('banana-btn');
+    if(!ctrl||!btn)return;
+    const isRound2=currentRound===2;
+    const canShow=!isAdmin&&!!myName&&isRound2&&currentStatus==='racing';
+    ctrl.style.display=canShow?'flex':'none';
+    if(!canShow)return;
+    const used=!!bananaUses[myName];
+    btn.disabled=used;
+    btn.innerText=`🍌 丟香蕉皮 (${used?0:1}/1)`;
 }
-
+function dropBanana(){
+    if(!myName||isAdmin)return;
+    if(currentRound!==2||currentStatus!=='racing')return;
+    if(bananaUses[myName])return;
+    db.ref(`gameState/bananaUses/${myName}`).set(true);
+    db.ref('gameState/bananaRequests').push({by:myName,at:Date.now()+serverOffset});
+    updateBananaButton();
+}
+function forceLocalReset(){
+    isRacingNow=false;
+    stopListeningSnapshot();
+    localStorage.removeItem('race_user');
+    myName="";
+    document.getElementById('leaderboard-overlay').style.display='none';
+    document.getElementById('btn-back').style.display='none';
+    document.getElementById('label-user-name').innerText=isAdmin?'ADMIN':'GUEST';
+    switchPage('page-login');
+    updateBananaButton();
+}
 // =====================================================================
 // Firebase Listeners
 // =====================================================================
-let isRacingNow = false;
+let isRacingNow=false;
 
-function listenFirebase() {
-    // --- users ---
-    db.ref('users').on('value', snap => {
-        const u = snap.val();
-        if (!u && myName && !isAdmin) { localStorage.removeItem('race_user'); location.reload(); return; }
-        const users = u || {};
-        names.forEach(n => {
-            const el = document.getElementById(`user-${n}`);
-            users[n] ? el.classList.add('taken') : el.classList.remove('taken');
-        });
-        if (myName && users[myName]) {
-            if (!isRacingNow) switchPage('page-setup');
-            if (!isAdmin) document.getElementById('label-user-name').innerText = myName;
-            document.getElementById('btn-back').style.display = 'inline-flex';
-        } else {
-            switchPage('page-login');
-            document.getElementById('btn-back').style.display = 'none';
-        }
+function listenFirebase(){
+    db.ref('gameState/resetAt').on('value',snap=>{
+        const ts=snap.val();
+        if(!ts||ts===lastResetAt)return;
+        lastResetAt=ts;
+        forceLocalReset();
+    });
+    db.ref('gameState/currentRound').on('value',rSnap=>{
+        currentRound=rSnap.val()||1;
+        updateBackButton();
+        updateBananaButton();
+    });
+    db.ref('gameState/bananaUses').on('value',snap=>{
+        bananaUses=snap.val()||{};
+        updateBananaButton();
+    });
+    db.ref('users').on('value',snap=>{
+        const u=snap.val();
+        if(!u&&myName&&!isAdmin){localStorage.removeItem('race_user');location.reload();return;}
+        const users=u||{};
+        names.forEach(n=>{const el=document.getElementById(`user-${n}`);users[n]?el.classList.add('taken'):el.classList.remove('taken');});
+        if(myName&&users[myName]){
+            if(!isRacingNow)switchPage('page-setup');
+            if(!isAdmin)document.getElementById('label-user-name').innerText=myName;
+                        updateBackButton();
+        }else{switchPage('page-login');document.getElementById('btn-back').style.display='none';}
         updateAdminMonitor(users);
     });
-
-    // --- assignments ---
-    db.ref('assignments').on('value', snap => {
-        const a = snap.val() || {};
-        horseLibrary.forEach((_, i) => {
-            const el    = document.getElementById(`slot-${i}`);
-            const badge = document.getElementById(`owner-${i}`);
-            const owner = Object.keys(a).find(k => a[k] === i);
+    db.ref('assignments').on('value',snap=>{
+        const a=snap.val()||{};
+        horseLibrary.forEach((_,i)=>{
+            const el=document.getElementById(`slot-${i}`);
+            const badge=document.getElementById(`owner-${i}`);
+            const owner=Object.keys(a).find(k=>a[k]===i);
             el.classList.remove('selected','occupied');
-            if (owner) {
-                badge.style.display = 'block';
-                badge.innerText = `${owner} 已選`;
-                owner === myName ? el.classList.add('selected') : el.classList.add('occupied');
-            } else { badge.style.display = 'none'; }
+            if(owner){badge.style.display='block';badge.innerText=`${owner} 已選`;owner===myName?el.classList.add('selected'):el.classList.add('occupied');}
+            else{badge.style.display='none';}
         });
     });
-
-    // --- gameState / status only ---
-    db.ref('gameState/status').on('value', snap => {
-        const status = snap.val();
-        if (status === 'racing') {
-            isRacingNow = true;
-            if (isAdmin) document.getElementById('admin-start-btn').style.display = 'none';
-            db.ref('gameState').once('value', fullSnap => {
-                const s = fullSnap.val();
-                if (!s || s.status !== 'racing') return;
+    // --- gameState/status ---
+    db.ref('gameState/status').on('value',snap=>{
+        const status=snap.val();
+        currentStatus=status||'idle';
+        if(status==='racing'){
+            isRacingNow=true;
+            if(isAdmin)document.getElementById('admin-start-btn').style.display='none';
+            db.ref('gameState').once('value',fullSnap=>{
+                const s=fullSnap.val();
+                if(!s||s.status!=='racing')return;
                 switchPage('page-track');
                 setupTrackLanes(s.raceData);
                 startListeningSnapshot();
+                updateBananaButton();
             });
-        } else if (status === 'finished') {
-            isRacingNow = false;
-            db.ref('gameState/results').once('value', rSnap => {
-                const results = rSnap.val();
-                if (results) showLeaderboard(results);
+        } else if(status==='round1Done'){
+            // 第一輪結束 → 顯示第一輪榜單（榜單是 overlay，但先把跑道頁切掉）
+            isRacingNow=false;
+            stopListeningSnapshot();
+            switchPage('page-setup');
+            db.ref('gameState/results').once('value',rSnap=>{
+                if(rSnap.val()) showRound1Leaderboard(rSnap.val());
+            });
+        } else if(status==='finished'){
+            // 兩輪都完 → 顯示最終榜單
+            isRacingNow=false;
+            stopListeningSnapshot();
+            switchPage('page-setup');
+            db.ref('gameState').once('value',gsSnap=>{
+                const gs=gsSnap.val()||{};
+                let final=gs.finalResults;
+                if(!final||!final.length){
+                    const round1=gs.round1Results||[];
+                    const round2=gs.results||[];
+                    if(round1.length&&round2.length){
+                        const r1Map={};round1.forEach(r=>{r1Map[r.name]=r.points||0;});
+                        final=round2.map(r=>({
+                            name:r.name,
+                            round1Points:r1Map[r.name]||0,
+                            round2Points:r.points||0,
+                            totalPoints:(r1Map[r.name]||0)+(r.points||0)
+                        }));
+                        final.sort((a,b)=>b.totalPoints-a.totalPoints);
+                    }
+                }
+                if(final&&final.length) showFinalLeaderboard(final);
             });
         } else {
-            isRacingNow = false;
-            if (isAdmin) document.getElementById('admin-start-btn').style.display = 'inline-flex';
-            document.getElementById('leaderboard-overlay').style.display = 'none';
+            // idle
+            isRacingNow=false;
+            if(isAdmin)document.getElementById('admin-start-btn').style.display='inline-flex';
+            document.getElementById('leaderboard-overlay').style.display='none';
             stopListeningSnapshot();
-            if (document.getElementById('page-track').classList.contains('active')) {
-                setTimeout(() => location.reload(), 500);
+            switchPage('page-setup');
+            updateBananaButton();
+            // 讀 currentRound 來判斷標題
+            db.ref('gameState/currentRound').once('value', rSnap => {
+                const round = rSnap.val() || 1;
+                if(round === 2){
+                    document.querySelector('#page-setup .page-heading h2').innerHTML = '🐎 第二輪 — 請選擇您的參賽戰馬';
+                    if(isAdmin) document.getElementById('admin-start-btn').innerText = '🏁 開始第二輪比賽';
+                } else {
+                    document.querySelector('#page-setup .page-heading h2').innerHTML = '🐎 請選擇您的參賽戰馬';
+                    if(isAdmin) document.getElementById('admin-start-btn').innerText = '🏁 開始比賽';
+                }
+                // round 2: hide back button to prevent returning to name selection
+                const backBtn = document.getElementById('btn-back');
+                if(backBtn)
+                    if(round === 2) backBtn.style.display = 'none';
+                    else backBtn.style.display = myName ? 'inline-flex' : 'none';
+                updateBananaButton();
+                
+            });
+            if(document.getElementById('page-track').classList.contains('active')){
+                switchPage('page-setup');
             }
         }
     });
 }
-
-function updateAdminMonitor(users) {
-    if (!isAdmin) return;
-    db.ref('assignments').once('value', snap => {
-        const a = snap.val() || {};
-        document.getElementById('admin-status-grid').innerHTML =
-            Object.keys(users).map(name =>
-                `<span class="player-status-tag ${a[name] !== undefined ? 'ready' : ''}">${name}: ${a[name] !== undefined ? horseLibrary[a[name]].trait : "未選馬"}</span>`
-            ).join('');
+function updateAdminMonitor(users){
+    if(!isAdmin)return;
+    db.ref('assignments').once('value',snap=>{
+        const a=snap.val()||{};
+        document.getElementById('admin-status-grid').innerHTML=Object.keys(users).map(name=>`<span class="player-status-tag ${a[name]!==undefined?'ready':''}">${name}: ${a[name]!==undefined?horseLibrary[a[name]].trait:"未選馬"}</span>`).join('');
     });
 }
-
-function switchPage(id) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+function switchPage(id){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
-    document.getElementById('header').style.display = (id === 'page-track') ? 'none' : 'flex';
+    document.getElementById('header').style.display=(id==='page-track')?'none':'flex';
 }
 
 // =====================================================================
 // ADMIN — Game Loop
 // =====================================================================
-let adminLoopTimer = null;
+let adminLoopTimer=null;
+let bananaRequestQueue=[];
+let bananaRequestListener=null;
 
-function adminStart() {
-    db.ref('assignments').once('value', snap => {
-        const players = snap.val();
-        if (!players) return alert("無人參賽！");
+function adminStart(){
+    // 讀當前 round（可能不存在 = 第一輪）
+    db.ref('gameState/currentRound').once('value', roundSnap => {
+        const currentRound = roundSnap.val() || 1;
 
-        const raceData = {};
-        Object.entries(players).forEach(([name, hIdx]) => {
-            const h = horseLibrary[hIdx];
-            const events = [];
-            for (let j = 0; j < 3; j++) {
-                const t    = 8 + (j * 8) + Math.random() * 5;
-                const type = (Math.random() * 100 < h.stats.lck) ? 'burst' : 'slip';
-                events.push({ t, type });
-            }
-            raceData[name] = { hIdx, events };
+        db.ref('assignments').once('value',snap=>{
+            const players=snap.val();
+            if(!players)return alert("無人參賽！");
+            const raceData={};
+            Object.entries(players).forEach(([name,hIdx])=>{
+                const h=horseLibrary[hIdx];
+                const events=[];
+                for(let j=0;j<3;j++){
+                    const t=8+(j*8)+Math.random()*5;
+                    const type=(Math.random()*100<h.stats.lck)?'burst':'slip';
+                    events.push({t,type});
+                }
+                raceData[name]={hIdx,events};
+            });
+            const startTime=Date.now()+serverOffset+4000;
+            // 寫入 gameState，保留 round1Results（update 而非 set）
+            db.ref('gameState').update({status:'racing',startTime,raceData,currentRound});
+            startAdminGameLoop(startTime,raceData,currentRound);
         });
-
-        const startTime = Date.now() + serverOffset + 4000;
-        db.ref('gameState').set({ status: 'racing', startTime, raceData });
-        startAdminGameLoop(startTime, raceData);
     });
 }
 
-function startAdminGameLoop(startTime, raceData) {
-    if (adminLoopTimer) clearInterval(adminLoopTimer);
-
-    const runners = Object.entries(raceData).map(([name, data]) => ({
-        name,
-        stats: horseLibrary[data.hIdx].stats,
-        events: data.events,
-        progress: 0,
-        stamina: 100,
-        isRecovering: false,
-        recoveryEndTime: 0,
-        finished: false,
-        finishTime: null,
-        finishRank: null,        // ← 完成時的名次（1-based）
-        exhaustedUntil: 0,       // ← 爆肝動畫持續到幾秒（elapsed 單位），期間鎖住 exhausted 狀態
-        activeEffect: null
+function startAdminGameLoop(startTime,raceData,currentRound){
+    if(adminLoopTimer)clearInterval(adminLoopTimer);
+    const runners=Object.entries(raceData).map(([name,data])=>({
+        name,stats:horseLibrary[data.hIdx].stats,events:data.events,
+        progress:0,stamina:100,isRecovering:false,recoveryEndTime:0,
+        finished:false,finishTime:null,finishRank:null,
+        exhaustedUntil:0,activeEffect:null,
+        bananas:[],bananaSlipUntil:0
     }));
+    let lastElapsed=-999;
+    let finishedCount=0;
+    bananaRequestQueue=[];
+    if(bananaRequestListener){
+        db.ref('gameState/bananaRequests').off('child_added',bananaRequestListener);
+        bananaRequestListener=null;
+    }
+    bananaRequestListener=db.ref('gameState/bananaRequests').on('child_added',snap=>{
+        bananaRequestQueue.push({id:snap.key,...(snap.val()||{})});
+    });
 
-    let lastElapsed = -999;
-    let finishedCount = 0;       // ← 累計已完成人數
+    adminLoopTimer=setInterval(()=>{
+        const now=Date.now()+serverOffset;
+        const elapsed=(now-startTime)/1000;
+        if(elapsed<0){lastElapsed=elapsed;return;}
+        const dt=(lastElapsed<0)?0.1:(elapsed-lastElapsed);
+        lastElapsed=elapsed;
 
-    adminLoopTimer = setInterval(() => {
-        const now     = Date.now() + serverOffset;
-        const elapsed = (now - startTime) / 1000;
+        if(currentRound===2&&bananaRequestQueue.length){
+            const pending=[...bananaRequestQueue];
+            bananaRequestQueue=[];
+            pending.forEach(req=>{
+                const leader=[...runners].filter(r=>!r.finished).sort((a,b)=>b.progress-a.progress)[0];
+                if(!leader){db.ref(`gameState/bananaRequests/${req.id}`).remove();return;}
+                const base=leader.progress+0.08;
+                const pos=Math.min(0.97,Math.max(0.05,base+Math.random()*0.04));
+                leader.bananas.push({pos,hit:false,by:req.by||""});
+                db.ref(`gameState/bananaRequests/${req.id}`).remove();
+            });
+        }
 
-        if (elapsed < 0) { lastElapsed = elapsed; return; }
-
-        const dt = (lastElapsed < 0) ? 0.1 : (elapsed - lastElapsed);
-        lastElapsed = elapsed;
-
-        runners.forEach(r => {
-            if (r.finished) return;
-
-            // --- 恢復中 ---
-            if (r.isRecovering) {
-                // 爆肝動畫持續期間：鎖住 exhausted，不切到 recovering
-                if (elapsed < r.exhaustedUntil) {
-                    r.activeEffect = 'exhausted';
-                } else {
-                    r.activeEffect = 'recovering';
-                }
-                if (elapsed >= r.recoveryEndTime) {
-                    r.isRecovering = false;
-                    r.stamina      = 100;
-                    r.activeEffect = null;
-                }
+        runners.forEach(r=>{
+            if(r.finished)return;
+            if(r.isRecovering){
+                r.activeEffect=(elapsed<r.exhaustedUntil)?'exhausted':'recovering';
+                if(elapsed>=r.recoveryEndTime){r.isRecovering=false;r.stamina=100;r.activeEffect=null;}
                 return;
             }
-
-            // --- 計算 ---
-            let spd   = (r.stats.spd / 100) * 0.035;
-            let drain = (1.5 - r.stats.sta / 100) * 2.5;
-            r.activeEffect = null;
-
-            r.events.forEach(ev => {
-                if (elapsed >= ev.t && elapsed <= ev.t + 1.5) {
-                    if (ev.type === 'burst') {
-                        spd   *= (1.5 + r.stats.burst / 100);
-                        drain *= 5;
-                        r.activeEffect = 'burst';
-                    } else {
-                        r.progress     = Math.max(0, r.progress - 0.012 * dt);
-                        r.activeEffect = 'slip';
-                    }
+            let spd=(r.stats.spd/100)*0.035;
+            let drain=(1.5-r.stats.sta/100)*2.5;
+            r.activeEffect=null;
+            r.events.forEach(ev=>{
+                if(elapsed>=ev.t&&elapsed<=ev.t+1.5){
+                    if(ev.type==='burst'){spd*=(1.5+r.stats.burst/100);drain*=5;r.activeEffect='burst';}
+                    else{r.progress=Math.max(0,r.progress-0.012*dt);r.activeEffect='slip';}
                 }
             });
-
-            r.progress += spd * dt;
-            r.stamina   = Math.max(0, r.stamina - drain * dt);
-
-            // 體力耗盡
-            if (r.stamina <= 0) {
-                r.isRecovering      = true;
-                r.recoveryEndTime   = elapsed + 5;
-                r.exhaustedUntil    = elapsed + 1.5;   // ← 爆肝動畫先鎖 1.5 秒
-                r.activeEffect      = 'exhausted';
+            if(elapsed<r.bananaSlipUntil){
+                spd*=0.35;
+                r.activeEffect='slip';
             }
-
-            // 到達終點 → 記錄名次
-            if (r.progress >= 1) {
-                r.progress     = 1;
-                r.finished     = true;
-                r.finishTime   = elapsed;
-                finishedCount++;
-                r.finishRank   = finishedCount;   // ← 幾號完成就幾名
-                r.activeEffect = 'finished';
-            }
+            r.progress+=spd*dt;
+            r.stamina=Math.max(0,r.stamina-drain*dt);
+            r.bananas.forEach(b=>{
+                if(!b.hit&&r.progress>=b.pos){
+                    b.hit=true;
+                    r.progress=Math.max(0,r.progress-0.02);
+                    r.bananaSlipUntil=Math.max(r.bananaSlipUntil,elapsed+1.2);
+                    r.activeEffect='slip';
+                }
+            });
+            if(r.stamina<=0){r.isRecovering=true;r.recoveryEndTime=elapsed+5;r.exhaustedUntil=elapsed+1.5;r.activeEffect='exhausted';}
+            if(r.progress>=1){r.progress=1;r.finished=true;r.finishTime=elapsed;finishedCount++;r.finishRank=finishedCount;r.activeEffect='finished';}
         });
 
-        // --- 寫快照 ---
-        const snapshot = {};
-        runners.forEach(r => {
-            snapshot[r.name] = {
-                progress:            r.progress,
-                stamina:             r.stamina,
-                activeEffect:        r.activeEffect,
-                isRecovering:        r.isRecovering,
-                recoveryEndTime:     r.recoveryEndTime,
-                recoverySecondsLeft: r.isRecovering ? Math.max(0, Math.ceil(r.recoveryEndTime - elapsed)) : 0,
-                finished:            r.finished,
-                finishTime:          r.finishTime,
-                finishRank:          r.finishRank    // ← 傳給 client
-            };
+        // 寫快照
+        const snapshot={};
+        const bananaSnapshot={};
+        runners.forEach(r=>{
+            snapshot[r.name]={progress:r.progress,stamina:r.stamina,activeEffect:r.activeEffect,isRecovering:r.isRecovering,recoveryEndTime:r.recoveryEndTime,recoverySecondsLeft:r.isRecovering?Math.max(0,Math.ceil(r.recoveryEndTime-elapsed)):0,finished:r.finished,finishTime:r.finishTime,finishRank:r.finishRank};
+            bananaSnapshot[r.name]=(r.bananas||[]).filter(b=>!b.hit).map(b=>b.pos);
         });
+        snapshot._bananas=bananaSnapshot;
         db.ref('gameState/snapshot').set(snapshot);
 
-        // --- 全部跑完 ---
-        if (runners.every(r => r.finished)) {
+        // 全部跑完
+        if(runners.every(r=>r.finished)){
             clearInterval(adminLoopTimer);
-            adminLoopTimer = null;
-            setTimeout(() => {
-                const sorted  = [...runners].sort((a, b) => a.finishTime - b.finishTime);
-                const results = sorted.map((r, i) => ({ name: r.name, finishTime: r.finishTime, rank: i + 1 }));
-                db.ref('gameState').update({ status: 'finished', results });
-            }, 1200);
+            adminLoopTimer=null;
+            setTimeout(()=>{
+                const sorted=[...runners].sort((a,b)=>a.finishTime-b.finishTime);
+                const results=sorted.map((r,i)=>({name:r.name,finishTime:r.finishTime,rank:i+1,points:POINTS[i]||0}));
+
+                if(currentRound===1){
+                    // 第一輪結束：寫 results + round1Results，切狀態
+                    db.ref('gameState').update({
+                        status:'round1Done',
+                        results,
+                        round1Results: results,
+                        currentRound: 2   // 下一輪准备為第二輪
+                    });
+                } else {
+                    // 第二輪結束：拉 round1Results 計算累加
+                    db.ref('gameState/round1Results').once('value', r1Snap => {
+                        const round1 = r1Snap.val() || [];
+                        // 建立 name → round1 points 的 map
+                        const r1Map = {};
+                        round1.forEach(r => { r1Map[r.name] = r.points || 0; });
+
+                        // 計算累加
+                        const finalResults = results.map(r => ({
+                            name: r.name,
+                            round1Points: r1Map[r.name] || 0,
+                            round2Points: r.points,
+                            totalPoints:  (r1Map[r.name] || 0) + r.points
+                        }));
+                        // 按 totalPoints 降序排
+                        finalResults.sort((a,b) => b.totalPoints - a.totalPoints);
+
+                        db.ref('gameState').update({
+                            status:'finished',
+                            results,
+                            finalResults
+                        });
+                    });
+                }
+            },1200);
         }
-    }, 100);
+    },100);
+}
+function stopAdminGameLoop(){
+    if(adminLoopTimer){clearInterval(adminLoopTimer);adminLoopTimer=null;}
+    if(bananaRequestListener){
+        db.ref('gameState/bananaRequests').off('child_added',bananaRequestListener);
+        bananaRequestListener=null;
+    }
+    bananaRequestQueue=[];
 }
 
-function stopAdminGameLoop() { if (adminLoopTimer) { clearInterval(adminLoopTimer); adminLoopTimer = null; } }
+// 開始第二輪（從榜單按鈕觸發）
+function adminStartRound2(){
+    document.getElementById('leaderboard-overlay').style.display='none';
+    // 保留 assignments ，第二輪可直接開始
+    db.ref('gameState/bananaUses').remove();
+    db.ref('gameState/bananaRequests').remove();
+    db.ref('gameState').update({status:'idle',currentRound:2});
+}
 
-function adminReset() {
+// 重置全場
+function adminReset(){
     stopAdminGameLoop();
     stopListeningSnapshot();
     db.ref('users').remove();
     db.ref('assignments').remove();
-    db.ref('gameState').set({ status: 'idle' });
+    db.ref('gameState/bananaUses').remove();
+    db.ref('gameState/bananaRequests').remove();
+    const resetAt=Date.now()+serverOffset;
+    lastResetAt=resetAt;
+    forceLocalReset();
+    db.ref('gameState').set({status:'idle',currentRound:1,resetAt}); // set 而非 update，清掉所有子節點
 }
 
 // =====================================================================
-// CLIENT — Snapshot Renderer
+// CLIENT — Snapshot
 // =====================================================================
-let snapshotListener = null;
-let trackSetupDone   = false;
-let playerOrder      = [];
+let snapshotListener=null;
+let trackSetupDone=false;
+let playerOrder=[];
 
-function setupTrackLanes(raceData) {
-    if (trackSetupDone) return;
-    trackSetupDone = true;
-    playerOrder = Object.keys(raceData);
-
-    const area = document.getElementById('lanes-render-area');
-    area.innerHTML = "";
-
-    playerOrder.forEach((name, idx) => {
-        const div = document.createElement('div');
-        div.className = 'lane';
-        div.innerHTML = `
-            <div class="horse-pawn" id="pawn-${idx}">
-                <div id="bubble-${idx}"></div>
-                <div class="horse-visual" id="vis-${idx}">🐎</div>
-                <div class="pawn-info">
-                    <div class="pawn-name">${name}</div>
-                    <div class="stamina-track"><div class="stamina-fill" id="stam-${idx}" style="width:100%"></div></div>
-                </div>
-            </div>`;
+function setupTrackLanes(raceData){
+    if(trackSetupDone)return;
+    trackSetupDone=true;
+    playerOrder=Object.keys(raceData);
+    const area=document.getElementById('lanes-render-area');
+    area.innerHTML="";
+    playerOrder.forEach((name,idx)=>{
+        const div=document.createElement('div');
+        div.className='lane';
+        div.innerHTML=`<div class="banana-layer" id="banana-${idx}"></div><div class="horse-pawn" id="pawn-${idx}"><div id="bubble-${idx}"></div><div class="horse-visual" id="vis-${idx}">🐎</div><div class="pawn-info"><div class="pawn-name">${name}</div><div class="stamina-track"><div class="stamina-fill" id="stam-${idx}" style="width:100%"></div></div></div></div>`;
         area.appendChild(div);
     });
 }
-
-function startListeningSnapshot() {
-    if (snapshotListener) return;
-
-    db.ref('gameState/startTime').once('value', snap => {
-        if (snap.val()) handleCountdown(snap.val());
-    });
-
-    snapshotListener = db.ref('gameState/snapshot').on('value', snap => {
-        const snapshot = snap.val();
-        if (snapshot) renderFromSnapshot(snapshot);
-    });
+function startListeningSnapshot(){
+    if(snapshotListener)return;
+    db.ref('gameState/startTime').once('value',snap=>{if(snap.val())handleCountdown(snap.val());});
+    snapshotListener=db.ref('gameState/snapshot').on('value',snap=>{const s=snap.val();if(s)renderFromSnapshot(s);});
 }
-
-function stopListeningSnapshot() {
-    if (snapshotListener) { db.ref('gameState/snapshot').off('value', snapshotListener); snapshotListener = null; }
-    trackSetupDone = false;
-    playerOrder    = [];
+function stopListeningSnapshot(){
+    if(snapshotListener){db.ref('gameState/snapshot').off('value',snapshotListener);snapshotListener=null;}
+    trackSetupDone=false;playerOrder=[];
 }
-
-// Countdown (client-local, cosmetic only)
-function handleCountdown(startTime) {
-    (function tick() {
-        const rem = (startTime - (Date.now() + serverOffset)) / 1000;
-        if (rem > 0) {
-            const ov = document.getElementById('countdown-overlay');
-            ov.style.display = 'flex';
-            ov.innerText = rem > 3 ? "READY" : Math.ceil(rem);
-            requestAnimationFrame(tick);
-        } else {
-            document.getElementById('countdown-overlay').style.display = 'none';
-        }
+function handleCountdown(startTime){
+    (function tick(){
+        const rem=(startTime-(Date.now()+serverOffset))/1000;
+        if(rem>0){const ov=document.getElementById('countdown-overlay');ov.style.display='flex';ov.innerText=rem>3?"READY":Math.ceil(rem);requestAnimationFrame(tick);}
+        else{document.getElementById('countdown-overlay').style.display='none';}
     })();
 }
-
-// =====================================================================
-// Core renderer — called every time a new snapshot arrives
-// =====================================================================
-function renderFromSnapshot(snapshot) {
-    const area = document.getElementById('lanes-render-area');
-    if (!area) return;
-    const finishLineX = area.offsetWidth - 140;
-
-    playerOrder.forEach((name, i) => {
-        const data = snapshot[name];
-        if (!data) return;
-
-        const pawn     = document.getElementById(`pawn-${i}`);
-        const vis      = document.getElementById(`vis-${i}`);
-        const bub      = document.getElementById(`bubble-${i}`);
-        const stamFill = document.getElementById(`stam-${i}`);
-        if (!pawn || !vis || !bub || !stamFill) return;
-
-        // Position
-        pawn.style.left = (data.progress * finishLineX) + "px";
-
-        // Stamina bar + colour
-        stamFill.style.width = data.stamina + "%";
-        stamFill.classList.toggle('low', data.stamina < 25);
-
-        // Reset visual classes
-        vis.className  = "horse-visual";
-        bub.className  = "";
-        bub.innerText  = "";
-
-        switch (data.activeEffect) {
-            // ── 衝刺 ──
-            case 'burst':
-                vis.classList.add('effect-sprint');
-                bub.className  = "speech-bubble bubble-sprint";
-                bub.innerText  = "🔥 衝刺！";
-                break;
-
-            // ── 滑倒 ──
-            case 'slip':
-                vis.classList.add('effect-slip');
-                bub.className  = "speech-bubble bubble-danger";
-                bub.innerText  = "🤡 滑倒！";
-                break;
-
-            // ── 體力耗盡（觸發那一幀）──
-            case 'exhausted':
-                vis.classList.add('effect-exhausted');
-                bub.className  = "speech-bubble bubble-danger";
-                bub.innerText  = "😵 已爆肝！";
-                break;
-
-            // ── 躺平恢復中 + 倒數秒數 ──
-            case 'recovering':
-                vis.classList.add('effect-exhausted');
-                bub.className  = "speech-bubble bubble-recover";
-                bub.innerText  = `🛌 躺平中 ${data.recoverySecondsLeft}s`;
-                break;
-
-            // ── 抵達終點：根據名次顯示對應表情 ──
-            case 'finished':
-                const emoji = rankEmojis[(data.finishRank || 1) - 1] || "🏁";
-                bub.className  = "speech-bubble bubble-finish";
-                bub.innerText  = emoji;
-                break;
+function renderFromSnapshot(snapshot){
+    const area=document.getElementById('lanes-render-area');
+    if(!area)return;
+    const horseSize=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--horse-size'))||36;
+    const finishLineX=Math.max(0,area.offsetWidth-FINISH_LINE_WIDTH-horseSize);
+    const bananaMap=snapshot._bananas||{};
+    playerOrder.forEach((name,i)=>{
+        const data=snapshot[name];if(!data)return;
+        const pawn=document.getElementById(`pawn-${i}`);
+        const vis=document.getElementById(`vis-${i}`);
+        const bub=document.getElementById(`bubble-${i}`);
+        const stamFill=document.getElementById(`stam-${i}`);
+        const bananaLayer=document.getElementById(`banana-${i}`);
+        if(!pawn||!vis||!bub||!stamFill)return;
+        pawn.style.left=(data.progress*finishLineX)+"px";
+        stamFill.style.width=data.stamina+"%";
+        stamFill.classList.toggle('low',data.stamina<25);
+        vis.className="horse-visual";bub.className="";bub.innerText="";
+        if(bananaLayer){
+            const bananas=bananaMap[name]||[];
+            bananaLayer.innerHTML=bananas.map(pos=>`<div class="banana" style="left:${pos*finishLineX}px">🍌</div>`).join('');
+        }
+        switch(data.activeEffect){
+            case'burst':vis.classList.add('effect-sprint');bub.className="speech-bubble bubble-sprint";bub.innerText="🔥 衝刺！";break;
+            case'slip':vis.classList.add('effect-slip');bub.className="speech-bubble bubble-danger";bub.innerText="🤡 滑倒！";break;
+            case'exhausted':vis.classList.add('effect-exhausted');bub.className="speech-bubble bubble-danger";bub.innerText="😵 已爆肝！";break;
+            case'recovering':vis.classList.add('effect-exhausted');bub.className="speech-bubble bubble-recover";bub.innerText=`🛌 躺平中 ${data.recoverySecondsLeft}s`;break;
+            case'finished':
+                const emoji=rankEmojis[(data.finishRank||1)-1]||"🏁";
+                bub.className="speech-bubble bubble-finish";bub.innerText=emoji;break;
         }
     });
 }
 
 // =====================================================================
-// Leaderboard
+// Leaderboard — 兩種模式
 // =====================================================================
-function showLeaderboard(results) {
-    document.getElementById('leaderboard-overlay').style.display = 'flex';
+const medalClass=i=>i===0?'gold':i===1?'silver':i===2?'bronze':'';
 
-    const medalClass = i => i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-
-    document.getElementById('rankings-list').innerHTML = results.map((r, i) =>
+// 第一輪榜單：顯示名次 + 本輪積分
+function showRound1Leaderboard(results){
+    document.getElementById('lb-subtitle').innerText = '— 第一輪結果 —';
+    document.getElementById('rankings-list').innerHTML = results.map((r,i)=>
         `<div class="rank-row">
             <div class="rank-row-left">
                 <div class="rank-badge ${medalClass(i)}">#${i+1}</div>
-                <span class="rank-name">${rankEmojis[i] || ""} ${r.name}</span>
+                <span class="rank-name">${rankEmojis[i]||""} ${r.name}</span>
             </div>
-         </div>`
+            <span class="rank-score">${r.points} 點</span>
+        </div>`
     ).join('');
+    // 榜單按鈕：admin 看到「開始第二輪」，非 admin 不顯示
+    const btn = document.getElementById('lb-action-btn');
+    if(isAdmin){
+        btn.style.display='inline-flex';
+        btn.className='btn btn-primary lb-btn';
+        btn.innerText='🐎 開始第二輪';
+        btn.onclick=adminStartRound2;
+    } else {
+        btn.style.display='none';
+    }
+    document.getElementById('leaderboard-overlay').style.display='flex';
+}
+
+// 最終榜單：顯示兩輪積分 + 總分
+function showFinalLeaderboard(finalResults){
+    document.getElementById('lb-subtitle').innerText = '— 兩輪總分排名 —';
+    document.getElementById('rankings-list').innerHTML = finalResults.map((r,i)=>
+        `<div class="rank-row">
+            <div class="rank-row-left">
+                <div class="rank-badge ${medalClass(i)}">#${i+1}</div>
+                <span class="rank-name">${rankEmojis[i]||""} ${r.name}</span>
+            </div>
+            <div style="text-align:right;">
+                <div class="rank-score">${r.totalPoints} 點</div>
+                <div class="rank-score-sub">${r.round1Points} + ${r.round2Points}</div>
+            </div>
+        </div>`
+    ).join('');
+    // 榜單按鈕：admin 看到「重置全場」
+    const btn = document.getElementById('lb-action-btn');
+    if(isAdmin){
+        btn.style.display='inline-flex';
+        btn.className='btn btn-danger lb-btn';
+        btn.innerText='🔄 重置全場';
+        btn.onclick=adminReset;
+    } else {
+        btn.style.display='none';
+    }
+    document.getElementById('leaderboard-overlay').style.display='flex';
 }
 
 // =====================================================================
@@ -1031,5 +743,3 @@ init();
 </script>
 </body>
 </html>
-
-
